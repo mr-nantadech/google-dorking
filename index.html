@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Dork Tool</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    h1 { text-align:center; font-size:1.8rem; color:#7eb8f7; margin-bottom:6px; letter-spacing:1px; }
+    .subtitle { text-align:center; font-size:0.85rem; color:#888; margin-bottom:24px; }
+    .container { max-width:920px; margin:0 auto; }
+
+    /* ── MAIN NAV ── */
+    .main-nav {
+      display:flex; gap:0;
+      background:#1a1a2e; border:1px solid #2a2a45;
+      border-radius:12px; overflow:hidden; margin-bottom:28px;
+    }
+    .main-nav-btn {
+      flex:1; padding:13px; text-align:center; cursor:pointer;
+      font-size:0.92rem; font-weight:600; color:#666;
+      border:none; background:transparent; border-radius:0; transition:all .2s;
+    }
+    .main-nav-btn.active { background:#7eb8f7; color:#0f0f1a; }
+    .main-nav-btn:hover:not(.active) { color:#7eb8f7; }
+
+    /* ── STRICT TOGGLE ── */
+    .strict-bar {
+      display:flex; align-items:center; gap:12px;
+      background:#1a1a2e; border:1px solid #2a2a45; border-radius:10px;
+      padding:10px 16px; margin-bottom:18px;
+    }
+    .strict-bar .strict-label { font-size:0.85rem; color:#aaa; flex:1; }
+    .strict-bar .strict-label strong { color:#ffd54f; }
+    .strict-bar .strict-desc  { font-size:0.75rem; color:#666; }
+
+    .strict-toggle {
+      position:relative; width:48px; height:26px; flex-shrink:0;
+    }
+    .strict-toggle input { opacity:0; width:0; height:0; }
+    .strict-slider {
+      position:absolute; inset:0; border-radius:26px;
+      background:#333; cursor:pointer; transition:.3s;
+    }
+    .strict-slider::before {
+      content:''; position:absolute;
+      width:20px; height:20px; border-radius:50%;
+      left:3px; bottom:3px;
+      background:#aaa; transition:.3s;
+    }
+    .strict-toggle input:checked + .strict-slider { background:#ffd54f; }
+    .strict-toggle input:checked + .strict-slider::before { transform:translateX(22px); background:#0f0f1a; }
+
+    .strict-badge {
+      display:inline-block; background:#ffd54f; color:#0f0f1a;
+      font-size:0.7rem; font-weight:800; padding:2px 7px; border-radius:10px;
+      margin-left:6px; vertical-align:middle; letter-spacing:.5px;
+    }
+
+    /* ── PAGES ── */
+    .page { display:none; }
+    .page.active { display:block; }
+
+    /* ── CATEGORY TABS ── */
+    .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+    .tab {
+      background:#1e1e30; border:1px solid #333; color:#aaa;
+      padding:6px 14px; border-radius:20px; cursor:pointer;
+      font-size:0.82rem; transition:all .2s;
+    }
+    .tab:hover { border-color:#7eb8f7; color:#7eb8f7; }
+    .tab.active { background:#7eb8f7; color:#0f0f1a; border-color:#7eb8f7; font-weight:600; }
+
+    /* ── DORK GRID ── */
+    .dork-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; margin-bottom:24px; }
+    .dork-card {
+      background:#1a1a2e; border:1px solid #2a2a45;
+      border-radius:10px; padding:14px; cursor:pointer; transition:all .2s;
+    }
+    .dork-card:hover { border-color:#7eb8f7; transform:translateY(-2px); }
+    .dork-card .label { font-size:.73rem; color:#7eb8f7; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+    .dork-card .title { font-size:.93rem; font-weight:600; color:#ddd; margin-bottom:6px; }
+    .dork-card .syntax {
+      font-family:'Courier New',monospace; font-size:.76rem; color:#90caf9;
+      background:#0d1117; padding:4px 8px; border-radius:4px; word-break:break-all;
+    }
+    .dork-card .desc { font-size:.74rem; color:#777; margin-top:6px; }
+
+    /* ── BUILDER ── */
+    .builder { background:#1a1a2e; border:1px solid #2a2a45; border-radius:12px; padding:20px; margin-bottom:20px; }
+    .builder h2 { font-size:1rem; color:#7eb8f7; margin-bottom:14px; }
+    .input-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+    .input-group { display:flex; flex-direction:column; flex:1; min-width:160px; }
+    .input-group label { font-size:.75rem; color:#888; margin-bottom:4px; }
+    .input-group input, .input-group select {
+      background:#0d1117; border:1px solid #333; color:#e0e0e0;
+      padding:8px 12px; border-radius:6px; font-size:.9rem; outline:none; transition:border-color .2s;
+    }
+    .input-group input:focus, .input-group select:focus { border-color:#7eb8f7; }
+    .input-group select option { background:#1a1a2e; }
+
+    /* ── QUERY BOX ── */
+    .query-box {
+      background:#0d1117; border:1px solid #333; border-radius:8px;
+      padding:14px; font-family:'Courier New',monospace; font-size:.9rem;
+      color:#90caf9; word-break:break-all; min-height:48px; margin-bottom:14px;
+    }
+    .query-box.empty { color:#444; font-style:italic; }
+    .query-box.strict-on { border-color:#ffd54f55; }
+
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    button { padding:9px 20px; border:none; border-radius:6px; cursor:pointer; font-size:.88rem; font-weight:600; transition:opacity .2s; }
+    button:hover { opacity:.85; }
+    .btn-search  { background:#7eb8f7; color:#0f0f1a; }
+    .btn-copy    { background:#2a2a45; color:#e0e0e0; }
+    .btn-clear   { background:#2a1a1a; color:#f48fb1; }
+    .btn-add     { background:#1e3a2a; color:#80cbc4; }
+    .btn-orange  { background:#ff9800; color:#0f0f1a; }
+    .btn-purple  { background:#9c27b0; color:#fff; }
+
+    /* ── CHIPS ── */
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; min-height:32px; }
+    .chip {
+      background:#1e2a40; border:1px solid #3a4a60;
+      border-radius:16px; padding:4px 12px; font-size:.8rem; color:#90caf9;
+      display:flex; align-items:center; gap:6px;
+    }
+    .chip.strict { border-color:#ffd54f88; color:#ffd54f; background:#1e2010; }
+    .chip .remove { cursor:pointer; color:#f48fb1; font-size:.9rem; line-height:1; }
+
+    /* ── SUGGESTIONS ── */
+    .suggestions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .sug-chip {
+      background:#12121f; border:1px dashed #444; border-radius:14px;
+      padding:3px 10px; font-size:.75rem; color:#aaa; cursor:pointer; transition:all .15s;
+    }
+    .sug-chip:hover { border-color:#7eb8f7; color:#7eb8f7; }
+
+    /* ── PERSON SEARCH ── */
+    .person-box { background:#1a1a2e; border:1px solid #2a2a45; border-radius:12px; padding:22px; margin-bottom:22px; }
+    .person-box h2 { font-size:1rem; color:#80cbc4; margin-bottom:6px; }
+    .person-box .hint { font-size:.78rem; color:#666; margin-bottom:16px; }
+    .person-inputs { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-bottom:16px; }
+    .person-inputs .input-group label { color:#80cbc4; }
+
+    /* ── PLATFORM ── */
+    .platform-section-title {
+      font-size:.8rem; color:#666; text-transform:uppercase; letter-spacing:1px;
+      margin:18px 0 10px; padding-bottom:6px; border-bottom:1px solid #2a2a45;
+    }
+    .platform-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; margin-bottom:10px; }
+    .platform-card { background:#12121f; border:1px solid #2a2a45; border-radius:10px; padding:14px; transition:all .2s; }
+    .platform-card:hover { border-color:#80cbc4; }
+    .platform-card.strict-card { border-color:#ffd54f44; }
+    .platform-card.strict-card:hover { border-color:#ffd54f; }
+    .pf-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .pf-icon   { font-size:1.3rem; width:32px; text-align:center; }
+    .pf-name   { font-size:.9rem; font-weight:700; color:#ddd; }
+    .pf-desc   { font-size:.73rem; color:#666; }
+    .pf-query  {
+      font-family:'Courier New',monospace; font-size:.73rem; color:#80cbc4;
+      background:#0d1117; padding:6px 8px; border-radius:5px;
+      word-break:break-all; margin-bottom:10px; min-height:36px;
+    }
+    .pf-query.no-name  { color:#444; font-style:italic; }
+    .pf-query.strict-q { color:#ffd54f; }
+    .pf-actions { display:flex; gap:6px; }
+    .pf-btn { flex:1; padding:6px 8px; border:none; border-radius:5px; cursor:pointer; font-size:.76rem; font-weight:600; transition:opacity .2s; }
+    .pf-btn:hover { opacity:.8; }
+    .pf-btn-go   { background:#7eb8f7; color:#0f0f1a; }
+    .pf-btn-copy { background:#2a2a45; color:#ccc; }
+    .person-all-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:1px solid #2a2a45; }
+
+    /* ── PLATFORM FILTER TABS ── */
+    .pf-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+    .pf-tab {
+      background:#12121f; border:1px solid #2a2a45; color:#888;
+      padding:4px 12px; border-radius:14px; cursor:pointer; font-size:.78rem; transition:all .15s;
+    }
+    .pf-tab:hover  { border-color:#80cbc4; color:#80cbc4; }
+    .pf-tab.active { background:#80cbc4; color:#0f0f1a; border-color:#80cbc4; font-weight:700; }
+
+    hr { border:none; border-top:1px solid #2a2a45; margin:20px 0; }
+
+    #toast {
+      position:fixed; bottom:24px; left:50%;
+      transform:translateX(-50%) translateY(60px);
+      background:#7eb8f7; color:#0f0f1a;
+      padding:10px 22px; border-radius:24px; font-size:.85rem; font-weight:600;
+      transition:transform .3s ease; z-index:999; pointer-events:none;
+    }
+    #toast.show { transform:translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>&#x1F50D; Google Dork Tool</h1>
+  <p class="subtitle">ค้นหาแบบเจาะลึก — Google Dork Builder &amp; Person Search (OSINT)</p>
+
+  <!-- MAIN NAV -->
+  <div class="main-nav">
+    <button class="main-nav-btn active" onclick="switchPage('dork',this)">&#x2699;&#xFE0F; Dork Builder</button>
+    <button class="main-nav-btn" onclick="switchPage('person',this)">&#x1F464; Person Search</button>
+  </div>
+
+  <!-- ======================================================= PAGE: DORK ── -->
+  <div class="page active" id="page-dork">
+
+    <!-- Strict toggle -->
+    <div class="strict-bar">
+      <div>
+        <div class="strict-label"><strong>Strict Mode</strong> <span id="dorkStrictBadge" style="display:none" class="strict-badge">ON</span></div>
+        <div class="strict-desc">เปิด = keyword ที่เพิ่มจะถูกห่อด้วย <code>"..."</code> อัตโนมัติ เพื่อค้นหาวลีแน่นอน</div>
+      </div>
+      <label class="strict-toggle">
+        <input type="checkbox" id="dorkStrictCheck" onchange="toggleDorkStrict()" />
+        <span class="strict-slider"></span>
+      </label>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div class="dork-grid" id="dorkGrid"></div>
+    <hr />
+    <div class="builder">
+      <h2>&#x2699;&#xFE0F; Query Builder</h2>
+      <div class="chips" id="chips"></div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Operator</label>
+          <select id="opSelect" onchange="updateSuggestions()"></select>
+        </div>
+        <div class="input-group">
+          <label>Keyword / Value</label>
+          <input id="kwInput" type="text" placeholder="กรอก keyword..." onkeydown="if(event.key==='Enter') addChip()" />
+        </div>
+        <div class="input-group" style="justify-content:flex-end;min-width:110px;">
+          <label>&nbsp;</label>
+          <button class="btn-add" onclick="addChip()">+ เพิ่ม</button>
+        </div>
+      </div>
+      <div class="suggestions" id="suggestions"></div>
+      <hr />
+      <div style="margin-bottom:10px;font-size:.8rem;color:#666;">Query ที่จะใช้ค้นหา</div>
+      <div class="query-box empty" id="queryBox">— ยังไม่มี query —</div>
+      <div class="actions">
+        <button class="btn-search" onclick="doSearch()">&#x1F50D; ค้นหาใน Google</button>
+        <button class="btn-copy"   onclick="copyQuery()">&#x1F4CB; Copy Query</button>
+        <button class="btn-clear"  onclick="clearAll()">&#x2716; ล้างทั้งหมด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= PAGE: PERSON ── -->
+  <div class="page" id="page-person">
+
+    <!-- Strict toggle -->
+    <div class="strict-bar">
+      <div>
+        <div class="strict-label"><strong>Strict Mode</strong> <span id="personStrictBadge" style="display:none" class="strict-badge">ON</span></div>
+        <div class="strict-desc">เปิด = ใช้ <code>"ชื่อ นามสกุล"</code> + เพิ่มบริษัท/เมืองเข้าไปในทุก query เพื่อเจาะจงสูงสุด</div>
+      </div>
+      <label class="strict-toggle">
+        <input type="checkbox" id="personStrictCheck" onchange="togglePersonStrict()" />
+        <span class="strict-slider"></span>
+      </label>
+    </div>
+
+    <div class="person-box">
+      <h2>&#x1F464; ค้นหาบุคคลผ่าน Google Dork</h2>
+      <p class="hint">กรอกข้อมูลที่รู้จัก — ไม่จำเป็นต้องครบ — query สร้างอัตโนมัติ (Strict Mode เพิ่ม context ให้แม่นยำขึ้น)</p>
+
+      <div class="person-inputs">
+        <div class="input-group">
+          <label>ชื่อ (First Name)</label>
+          <input id="pFirstName" type="text" placeholder="เช่น สมชาย / John" oninput="renderPlatforms()" />
+        </div>
+        <div class="input-group">
+          <label>นามสกุล (Last Name)</label>
+          <input id="pLastName" type="text" placeholder="เช่น ใจดี / Smith" oninput="renderPlatforms()" />
+        </div>
+        <div class="input-group">
+          <label>ชื่อเล่น / Username</label>
+          <input id="pNick" type="text" placeholder="เช่น john99" oninput="renderPlatforms()" />
+        </div>
+        <div class="input-group">
+          <label>บริษัท / องค์กร</label>
+          <input id="pOrg" type="text" placeholder="เช่น Acme Corp" oninput="renderPlatforms()" />
+        </div>
+        <div class="input-group">
+          <label>เมือง / ประเทศ</label>
+          <input id="pLocation" type="text" placeholder="เช่น Bangkok" oninput="renderPlatforms()" />
+        </div>
+        <div class="input-group">
+          <label>อีเมล (ถ้ามี)</label>
+          <input id="pEmail" type="text" placeholder="เช่น john@email.com" oninput="renderPlatforms()" />
+        </div>
+        <div class="input-group">
+          <label>เบอร์โทร (ถ้ามี)</label>
+          <input id="pPhone" type="text" placeholder="เช่น 0812345678" oninput="renderPlatforms()" />
+        </div>
+      </div>
+
+      <div class="pf-tabs" id="pfTabs"></div>
+      <div id="platformGrid"></div>
+
+      <div class="person-all-actions">
+        <button class="btn-orange" onclick="openAll()">&#x1F310; เปิดทุก Platform</button>
+        <button class="btn-purple" onclick="openCategory()">&#x1F4C2; เปิดเฉพาะหมวดนี้</button>
+        <button class="btn-copy"   onclick="copyAllQueries()">&#x1F4CB; Copy ทุก Query</button>
+        <button class="btn-clear"  onclick="clearPerson()">&#x2716; ล้างข้อมูล</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast">OK</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// DORK DATA
+// ══════════════════════════════════════════════════════════════════
+const categories = [
+  { id:'all',     label:'🔍 ทั้งหมด' },
+  { id:'basic',   label:'📌 พื้นฐาน' },
+  { id:'file',    label:'📄 ไฟล์' },
+  { id:'dir',     label:'📂 Directory' },
+  { id:'site',    label:'🌐 เว็บไซต์' },
+  { id:'login',   label:'🔐 Login/Admin' },
+  { id:'exposed', label:'⚠️ ข้อมูลรั่ว' },
+  { id:'cam',     label:'📷 Camera/IoT' },
+  { id:'db',      label:'🗄️ Database' },
+  { id:'social',  label:'👤 Social' },
+  { id:'news',    label:'📰 ข่าว/บทความ' },
+];
+
+const dorks = [
+  { cat:'basic', op:'site:',       label:'Operator', title:'Site Search',          syntax:'site:example.com keyword',                         desc:'ค้นหาเฉพาะภายในเว็บไซต์ที่กำหนด' },
+  { cat:'basic', op:'intitle:',    label:'Operator', title:'Title Search',          syntax:'intitle:"login page"',                             desc:'ค้นหาหน้าที่มีคำใน title' },
+  { cat:'basic', op:'allintitle:', label:'Operator', title:'All In Title',          syntax:'allintitle:admin panel',                           desc:'title ต้องมีทุกคำ' },
+  { cat:'basic', op:'inurl:',      label:'Operator', title:'URL Search',            syntax:'inurl:admin',                                      desc:'ค้นหา URL ที่มีคำนั้น' },
+  { cat:'basic', op:'allinurl:',   label:'Operator', title:'All In URL',            syntax:'allinurl:login admin',                             desc:'URL ต้องมีทุกคำ' },
+  { cat:'basic', op:'intext:',     label:'Operator', title:'In Text',               syntax:'intext:"password"',                                desc:'ค้นหาข้อความในเนื้อหาหน้า' },
+  { cat:'basic', op:'allintext:',  label:'Operator', title:'All In Text',           syntax:'allintext:username password',                      desc:'เนื้อหาต้องมีทุกคำ' },
+  { cat:'basic', op:'cache:',      label:'Operator', title:'Google Cache',          syntax:'cache:example.com',                                desc:'ดูหน้า cache ของ Google' },
+  { cat:'basic', op:'related:',    label:'Operator', title:'Related Sites',         syntax:'related:example.com',                              desc:'หาเว็บที่คล้ายกัน' },
+  { cat:'basic', op:'define:',     label:'Operator', title:'Define Word',           syntax:'define:phishing',                                  desc:'ค้นหานิยามคำ' },
+  { cat:'file',  op:'filetype:',   label:'Operator', title:'File Type',             syntax:'filetype:pdf "confidential"',                      desc:'ค้นหาไฟล์ตามนามสกุล' },
+  { cat:'file',  op:'ext:',        label:'Operator', title:'Extension',             syntax:'ext:sql site:example.com',                         desc:'ค้นหาด้วย extension ไฟล์' },
+  { cat:'file',  op:'filetype:pdf',label:'Quick',    title:'PDF Documents',         syntax:'filetype:pdf keyword',                             desc:'ค้นหาเอกสาร PDF' },
+  { cat:'file',  op:'filetype:xls',label:'Quick',    title:'Excel Files',           syntax:'filetype:xls "username" "password"',               desc:'ค้นหาไฟล์ Excel' },
+  { cat:'file',  op:'filetype:doc',label:'Quick',    title:'Word Documents',        syntax:'filetype:doc "confidential"',                      desc:'ค้นหาเอกสาร Word' },
+  { cat:'file',  op:'filetype:txt',label:'Quick',    title:'Text Files',            syntax:'filetype:txt "password"',                          desc:'ค้นหาไฟล์ข้อความ' },
+  { cat:'file',  op:'filetype:log',label:'Quick',    title:'Log Files',             syntax:'filetype:log inurl:password',                      desc:'ค้นหาไฟล์ log' },
+  { cat:'file',  op:'filetype:sql',label:'Quick',    title:'SQL Files',             syntax:'filetype:sql "insert into"',                       desc:'ค้นหาไฟล์ SQL dump' },
+  { cat:'file',  op:'filetype:env',label:'Quick',    title:'.env Files',            syntax:'filetype:env "DB_PASSWORD"',                       desc:'ค้นหาไฟล์ environment config' },
+  { cat:'file',  op:'filetype:bak',label:'Quick',    title:'Backup Files',          syntax:'filetype:bak site:example.com',                    desc:'ค้นหาไฟล์ backup' },
+
+  // DIRECTORY ACCESS / DIRECTORY LISTING
+  { cat:'dir', op:'intitle:',    label:'Classic',  title:'Open Directory (Root)',      syntax:'intitle:"index of /"',                                         desc:'ค้นหา directory listing ทั่วไปที่เปิดอยู่' },
+  { cat:'dir', op:'intitle:',    label:'Classic',  title:'Index of Parent Dir',        syntax:'intitle:"index of" "parent directory"',                        desc:'ค้นหาหน้า directory ที่มี parent directory link' },
+  { cat:'dir', op:'intitle:',    label:'Classic',  title:'Directory Listing Enabled',  syntax:'intitle:"directory listing" inurl:apache',                     desc:'ค้นหา Apache directory listing ที่เปิดอยู่' },
+  { cat:'dir', op:'intitle:',    label:'Classic',  title:'Nginx Autoindex',            syntax:'intitle:"index of" inurl:nginx',                               desc:'ค้นหา Nginx autoindex ที่เปิดอยู่' },
+  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: ไฟล์ Config',           syntax:'intitle:"index of" "config"',                                  desc:'ค้นหา directory ที่มีไฟล์ config' },
+  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: ไฟล์ Password',         syntax:'intitle:"index of" "password" OR "passwd" OR "shadow"',        desc:'ค้นหา directory ที่มีไฟล์รหัสผ่าน' },
+  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: ไฟล์ Backup',           syntax:'intitle:"index of" (".bak" OR ".backup" OR ".old")',            desc:'ค้นหา directory ที่มีไฟล์ backup' },
+  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: Database Files',        syntax:'intitle:"index of" (".sql" OR ".db" OR ".sqlite")',             desc:'ค้นหา directory ที่มีไฟล์ฐานข้อมูล' },
+  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: Log Files',             syntax:'intitle:"index of" (".log" OR "logs")',                         desc:'ค้นหา directory ที่มีไฟล์ log' },
+  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: .env / Secret',         syntax:'intitle:"index of" ".env" OR "secret" OR "credentials"',       desc:'ค้นหา directory ที่มีไฟล์ secret' },
+  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: Source Code',           syntax:'intitle:"index of" (".php" OR ".py" OR ".js" OR ".rb")',        desc:'ค้นหา directory ที่มี source code' },
+  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: Private Keys',          syntax:'intitle:"index of" (".pem" OR ".key" OR ".pfx" OR ".cer")',     desc:'ค้นหา directory ที่มีไฟล์ private key' },
+  { cat:'dir', op:'intitle:',    label:'CMS',      title:'Dir: WordPress Uploads',     syntax:'intitle:"index of" inurl:wp-content/uploads',                  desc:'ค้นหา uploads folder ของ WordPress' },
+  { cat:'dir', op:'intitle:',    label:'CMS',      title:'Dir: WordPress Content',     syntax:'intitle:"index of" inurl:wp-content',                          desc:'ค้นหา wp-content directory' },
+  { cat:'dir', op:'intitle:',    label:'CMS',      title:'Dir: Joomla Upload',         syntax:'intitle:"index of" inurl:components/com_',                     desc:'ค้นหา Joomla component directory' },
+  { cat:'dir', op:'intitle:',    label:'CMS',      title:'Dir: Drupal Files',          syntax:'intitle:"index of" inurl:sites/default/files',                 desc:'ค้นหา Drupal files directory' },
+  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /etc/ exposed',        syntax:'intitle:"index of" inurl:/etc/',                               desc:'ค้นหา /etc/ path ที่เปิดอยู่' },
+  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /uploads/ exposed',    syntax:'intitle:"index of" inurl:/uploads/',                           desc:'ค้นหา upload directory ที่เปิดอยู่' },
+  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /backup/ exposed',     syntax:'intitle:"index of" inurl:/backup/',                            desc:'ค้นหา backup directory ที่เปิดอยู่' },
+  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /admin/ exposed',      syntax:'intitle:"index of" inurl:/admin/',                             desc:'ค้นหา admin directory ที่เปิดอยู่' },
+  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /private/ exposed',    syntax:'intitle:"index of" inurl:/private/',                           desc:'ค้นหา private directory ที่เปิดอยู่' },
+  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /secret/ exposed',     syntax:'intitle:"index of" inurl:/secret/',                            desc:'ค้นหา secret directory ที่เปิดอยู่' },
+  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /temp/ exposed',       syntax:'intitle:"index of" inurl:/temp/ OR inurl:/tmp/',               desc:'ค้นหา temp directory ที่เปิดอยู่' },
+  { cat:'dir', op:'intitle:',    label:'Server',   title:'Server: Apache Status',      syntax:'intitle:"Apache Status" inurl:server-status',                  desc:'ค้นหาหน้า Apache server-status' },
+  { cat:'dir', op:'intitle:',    label:'Server',   title:'Server: Nginx Status',       syntax:'intitle:"Statistics" inurl:nginx_status',                      desc:'ค้นหาหน้า Nginx status' },
+  { cat:'dir', op:'intitle:',    label:'Server',   title:'Server: PHP Info',           syntax:'intitle:"phpinfo()" inurl:phpinfo.php',                        desc:'ค้นหาหน้า phpinfo ที่เปิดสาธารณะ' },
+  { cat:'dir', op:'intitle:',    label:'Server',   title:'Server: IIS Directory',      syntax:'intitle:"IIS Windows Server" intitle:"index"',                 desc:'ค้นหา IIS default directory listing' },
+  { cat:'dir', op:'intitle:',    label:'Site',     title:'Site-specific Dir Listing',  syntax:'intitle:"index of" site:example.com',                          desc:'ค้นหา directory listing เฉพาะเว็บที่กำหนด' },
+
+  { cat:'site',  op:'site:',       label:'Operator', title:'Domain Search',         syntax:'site:example.com',                                 desc:'ค้นหาทุกหน้าในโดเมน' },
+  { cat:'site',  op:'site:.gov',   label:'Quick',    title:'Government Sites',      syntax:'site:.gov keyword',                                desc:'ค้นหาในเว็บภาครัฐ' },
+  { cat:'site',  op:'site:.edu',   label:'Quick',    title:'Education Sites',       syntax:'site:.edu keyword',                                desc:'ค้นหาในเว็บมหาวิทยาลัย' },
+  { cat:'site',  op:'site:.mil',   label:'Quick',    title:'Military Sites',        syntax:'site:.mil keyword',                                desc:'ค้นหาในเว็บทหาร' },
+  { cat:'site',  op:'site:.th',    label:'Quick',    title:'Thai Sites',            syntax:'site:.th keyword',                                 desc:'ค้นหาในเว็บไทย' },
+  { cat:'site',  op:'-site:',      label:'Operator', title:'Exclude Site',          syntax:'keyword -site:example.com',                        desc:'ยกเว้นเว็บไซต์นั้น' },
+  { cat:'login', op:'intitle:',    label:'Quick',    title:'Admin Login Page',      syntax:'intitle:"admin login" site:example.com',            desc:'ค้นหาหน้า admin login' },
+  { cat:'login', op:'inurl:',      label:'Quick',    title:'Admin Panel',           syntax:'inurl:/admin site:example.com',                    desc:'ค้นหา admin panel' },
+  { cat:'login', op:'inurl:',      label:'Quick',    title:'phpMyAdmin',            syntax:'inurl:phpmyadmin site:example.com',                 desc:'ค้นหา phpMyAdmin' },
+  { cat:'login', op:'inurl:',      label:'Quick',    title:'WordPress Login',       syntax:'inurl:wp-login.php',                               desc:'ค้นหาหน้า login WordPress' },
+  { cat:'login', op:'intitle:',    label:'Quick',    title:'Control Panel',         syntax:'intitle:"control panel" inurl:cpanel',              desc:'ค้นหา Control Panel' },
+  { cat:'login', op:'inurl:',      label:'Quick',    title:'Login Page',            syntax:'inurl:login.php site:example.com',                  desc:'ค้นหา login.php' },
+  { cat:'exposed',op:'intext:',    label:'Quick',    title:'Username & Password',   syntax:'intext:"username" intext:"password" filetype:txt',  desc:'หาไฟล์ที่มี username/password' },
+  { cat:'exposed',op:'intext:',    label:'Quick',    title:'API Key',               syntax:'intext:"api_key" OR intext:"api-key" filetype:txt', desc:'ค้นหา API Key ที่หลุด' },
+  { cat:'exposed',op:'intext:',    label:'Quick',    title:'AWS Access Key',        syntax:'intext:"AKIA" filetype:txt site:pastebin.com',      desc:'ค้นหา AWS Access Key' },
+  { cat:'exposed',op:'filetype:env',label:'Quick',   title:'Env Config',            syntax:'filetype:env "SECRET_KEY"',                         desc:'ค้นหาไฟล์ .env ที่หลุด' },
+  { cat:'exposed',op:'intitle:',   label:'Quick',    title:'Index of Passwords',    syntax:'intitle:"index of" "password"',                     desc:'ค้นหา directory listing' },
+  { cat:'exposed',op:'intitle:',   label:'Quick',    title:'Index of /etc',         syntax:'intitle:"index of" "/etc"',                         desc:'ค้นหา directory /etc' },
+  { cat:'exposed',op:'inurl:',     label:'Quick',    title:'Git Config',            syntax:'inurl:".git/config" site:example.com',              desc:'ค้นหา .git config ที่เปิด' },
+  { cat:'cam',   op:'inurl:',      label:'Quick',    title:'IP Camera',             syntax:'inurl:view/view.shtml',                             desc:'ค้นหากล้อง IP ที่เปิด' },
+  { cat:'cam',   op:'intitle:',    label:'Quick',    title:'CCTV Live',             syntax:'intitle:"Live View / - AXIS"',                      desc:'ค้นหากล้อง Axis' },
+  { cat:'cam',   op:'inurl:',      label:'Quick',    title:'Webcam',                syntax:'inurl:/webcam.html',                                desc:'ค้นหา Webcam สาธารณะ' },
+  { cat:'cam',   op:'intitle:',    label:'Quick',    title:'Network Camera',        syntax:'intitle:"network camera" inurl:main.cgi',           desc:'ค้นหา Network Camera' },
+  { cat:'cam',   op:'inurl:',      label:'Quick',    title:'DVR/NVR Panel',         syntax:'inurl:8080/DVRClient',                              desc:'ค้นหาหน้า DVR/NVR' },
+  { cat:'cam',   op:'intitle:',    label:'Quick',    title:'Hikvision',             syntax:'intitle:"Hikvision" inurl:/doc/page/login.asp',     desc:'ค้นหากล้อง Hikvision' },
+  { cat:'db',    op:'inurl:',      label:'Quick',    title:'phpMyAdmin Open',       syntax:'inurl:phpmyadmin intitle:phpMyAdmin',               desc:'ค้นหา phpMyAdmin ที่เปิดสาธารณะ' },
+  { cat:'db',    op:'intitle:',    label:'Quick',    title:'MongoDB Admin',         syntax:'intitle:"MongoDB Statistics" inurl:28017',          desc:'ค้นหา MongoDB ที่เปิด' },
+  { cat:'db',    op:'intitle:',    label:'Quick',    title:'Elasticsearch',         syntax:'intitle:"Kibana" inurl:5601',                       desc:'ค้นหา Kibana/Elasticsearch' },
+  { cat:'db',    op:'filetype:sql',label:'Quick',    title:'SQL Dump',              syntax:'filetype:sql "CREATE TABLE"',                       desc:'ค้นหา SQL dump ที่หลุด' },
+  { cat:'db',    op:'inurl:',      label:'Quick',    title:'Redis Monitor',         syntax:'inurl::6379 intitle:"Redis"',                       desc:'ค้นหา Redis ที่เปิด' },
+  { cat:'db',    op:'intext:',     label:'Quick',    title:'Connection String',     syntax:'intext:"Server=.*;Database=.*;User Id=.*;"',        desc:'ค้นหา DB connection string' },
+  { cat:'social',op:'site:',       label:'Quick',    title:'LinkedIn Profile',      syntax:'site:linkedin.com/in/ "keyword"',                   desc:'ค้นหาโปรไฟล์ LinkedIn' },
+  { cat:'social',op:'site:',       label:'Quick',    title:'Twitter/X',             syntax:'site:x.com "keyword"',                             desc:'ค้นหาโพสต์ใน X/Twitter' },
+  { cat:'social',op:'site:',       label:'Quick',    title:'Facebook',              syntax:'site:facebook.com "keyword"',                      desc:'ค้นหาใน Facebook' },
+  { cat:'social',op:'site:',       label:'Quick',    title:'GitHub Code',           syntax:'site:github.com "password" "api_key"',              desc:'ค้นหา sensitive data ใน GitHub' },
+  { cat:'social',op:'site:',       label:'Quick',    title:'Pastebin',              syntax:'site:pastebin.com "keyword"',                       desc:'ค้นหาใน Pastebin' },
+  { cat:'news',  op:'intitle:',    label:'Quick',    title:'ข่าวล่าสุด',            syntax:'intitle:"keyword" site:thairath.co.th OR site:matichon.co.th', desc:'ค้นหาข่าวจากสื่อไทย' },
+  { cat:'news',  op:'after:',      label:'Operator', title:'After Date',            syntax:'keyword after:2024-01-01',                          desc:'ค้นหาเนื้อหาหลังวันที่กำหนด' },
+  { cat:'news',  op:'before:',     label:'Operator', title:'Before Date',           syntax:'keyword before:2024-12-31',                         desc:'ค้นหาเนื้อหาก่อนวันที่กำหนด' },
+];
+
+const operators = [
+  { value:'',           label:'— ไม่ใช้ operator —' },
+  { value:'site:',      label:'site: — เจาะเว็บไซต์' },
+  { value:'intitle:',   label:'intitle: — ค้นหาใน title' },
+  { value:'allintitle:',label:'allintitle: — title มีทุกคำ' },
+  { value:'inurl:',     label:'inurl: — ค้นหาใน URL' },
+  { value:'allinurl:',  label:'allinurl: — URL มีทุกคำ' },
+  { value:'intext:',    label:'intext: — ค้นหาในเนื้อหา' },
+  { value:'allintext:', label:'allintext: — เนื้อหามีทุกคำ' },
+  { value:'filetype:',  label:'filetype: — ประเภทไฟล์' },
+  { value:'ext:',       label:'ext: — extension ไฟล์' },
+  { value:'cache:',     label:'cache: — Google Cache' },
+  { value:'related:',   label:'related: — เว็บที่คล้าย' },
+  { value:'define:',    label:'define: — นิยามคำ' },
+  { value:'after:',     label:'after: — หลังวันที่' },
+  { value:'before:',    label:'before: — ก่อนวันที่' },
+  { value:'-site:',     label:'-site: — ยกเว้นเว็บ' },
+  { value:'OR',         label:'OR — หรือ' },
+  { value:'AND',        label:'AND — และ' },
+  { value:'-',          label:'- — ยกเว้นคำ' },
+  { value:'"',          label:'"" — วลีแน่นอน' },
+];
+
+const opSuggestions = {
+  'filetype:':  ['pdf','xls','xlsx','doc','docx','txt','log','sql','env','bak','conf','cfg','json','xml','csv'],
+  'ext:':       ['pdf','xls','doc','txt','log','sql','env','bak','php','asp','js'],
+  'site:':      ['.gov.th','.go.th','.ac.th','.co.th','.th','github.com','pastebin.com','linkedin.com'],
+  'inurl:':     ['admin','login','phpMyAdmin','wp-login','config','backup','dashboard','api','token'],
+  'intitle:':   ['"login"','"admin"','"index of"','"dashboard"','"control panel"','"configuration"'],
+  'intext:':    ['"password"','"username"','"api_key"','"secret"','"token"','"access_key"'],
+  'after:':     ['2024-01-01','2025-01-01','2023-01-01'],
+  'before:':    ['2025-12-31','2024-12-31','2026-12-31'],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// PLATFORM DATA — each entry has:
+//   query(p)       — normal query
+//   strictQuery(p) — strict (more precise) query
+// ══════════════════════════════════════════════════════════════════
+const platformCats = [
+  { id:'all',    label:'🌐 ทั้งหมด' },
+  { id:'social', label:'💬 Social' },
+  { id:'thai',   label:'🇹🇭 เว็บไทย' },
+  { id:'pro',    label:'💼 Professional' },
+  { id:'news',   label:'📰 ข่าว' },
+  { id:'doc',    label:'📄 เอกสาร' },
+  { id:'misc',   label:'🔎 อื่นๆ' },
+];
+
+// Helper: build context suffix for strict mode
+function ctxSuffix(p, exclude='') {
+  const parts = [];
+  if (p.org  && !exclude.includes(p.org))  parts.push(`"${p.org}"`);
+  if (p.loc  && !exclude.includes(p.loc))  parts.push(`"${p.loc}"`);
+  return parts.length ? ' ' + parts.join(' ') : '';
+}
+
+const platforms = [
+  // ── Social ──
+  {
+    cat:'social', icon:'🔵', name:'Facebook',
+    desc:'ค้นหาโปรไฟล์และโพสต์ใน Facebook',
+    query:       p => p.fullName ? `site:facebook.com "${p.fullName}"` : '',
+    strictQuery: p => p.fullName ? `site:facebook.com "${p.fullName}"${ctxSuffix(p)}` : '',
+  },
+  {
+    cat:'social', icon:'📸', name:'Instagram',
+    desc:'ค้นหาโปรไฟล์ Instagram',
+    query:       p => p.nick ? `site:instagram.com "${p.nick}"` : p.fullName ? `site:instagram.com "${p.fullName}"` : '',
+    strictQuery: p => {
+      const kw = p.nick ? `"${p.nick}"` : p.fullName ? `"${p.fullName}"` : '';
+      return kw ? `site:instagram.com ${kw}${ctxSuffix(p)}` : '';
+    },
+  },
+  {
+    cat:'social', icon:'🐦', name:'X / Twitter',
+    desc:'ค้นหาทวีตและโปรไฟล์ใน X',
+    query:       p => p.nick ? `site:x.com "${p.nick}" OR site:twitter.com "${p.nick}"` : p.fullName ? `site:x.com "${p.fullName}"` : '',
+    strictQuery: p => {
+      const kw = p.nick || p.fullName;
+      return kw ? `(site:x.com OR site:twitter.com) "${kw}"${ctxSuffix(p)}` : '';
+    },
+  },
+  {
+    cat:'social', icon:'▶️', name:'YouTube',
+    desc:'ค้นหาช่องและวิดีโอ YouTube',
+    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:youtube.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:youtube.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'social', icon:'🎵', name:'TikTok',
+    desc:'ค้นหาโปรไฟล์ TikTok',
+    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:tiktok.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:tiktok.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'social', icon:'💼', name:'LinkedIn',
+    desc:'ค้นหาโปรไฟล์มืออาชีพใน LinkedIn',
+    query:       p => {
+      if (!p.fullName) return '';
+      const parts = [`"${p.fullName}"`];
+      if (p.org) parts.push(`"${p.org}"`);
+      if (p.loc) parts.push(`"${p.loc}"`);
+      return `site:linkedin.com/in/ ${parts.join(' ')}`;
+    },
+    strictQuery: p => {
+      if (!p.fullName) return '';
+      const parts = [`"${p.fullName}"`];
+      if (p.org) parts.push(`"${p.org}"`);
+      if (p.loc) parts.push(`"${p.loc}"`);
+      if (p.email) parts.push(`"${p.email}"`);
+      return `site:linkedin.com/in/ ${parts.join(' ')}`;
+    },
+  },
+  {
+    cat:'social', icon:'📌', name:'Pinterest',
+    desc:'ค้นหาโปรไฟล์ Pinterest',
+    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:pinterest.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:pinterest.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'social', icon:'🎮', name:'Reddit',
+    desc:'ค้นหาผู้ใช้และโพสต์ใน Reddit',
+    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:reddit.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:reddit.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+
+  // ── เว็บไทย ──
+  {
+    cat:'thai', icon:'🌸', name:'Pantip',
+    desc:'ค้นหากระทู้และผู้ใช้ใน Pantip',
+    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:pantip.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `site:pantip.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'thai', icon:'🗞️', name:'Sanook',
+    desc:'ค้นหาข่าวและบุคคลใน Sanook',
+    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:sanook.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:sanook.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'thai', icon:'🏠', name:'Kapook',
+    desc:'ค้นหาข้อมูลบุคคลใน Kapook',
+    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:kapook.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:kapook.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'thai', icon:'🗣️', name:'Thairath',
+    desc:'ค้นหาข่าวบุคคลใน Thairath',
+    query:       p => { const kw = p.fullName; return kw ? `site:thairath.co.th "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:thairath.co.th "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'thai', icon:'📰', name:'Matichon',
+    desc:'ค้นหาข่าวบุคคลใน Matichon',
+    query:       p => { const kw = p.fullName; return kw ? `site:matichon.co.th "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:matichon.co.th "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'thai', icon:'📢', name:'Posttoday',
+    desc:'ค้นหาข่าวบุคคลใน Posttoday',
+    query:       p => { const kw = p.fullName; return kw ? `site:posttoday.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:posttoday.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'thai', icon:'🔍', name:'Wongnai',
+    desc:'ค้นหาโปรไฟล์ผู้ใช้ Wongnai',
+    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:wongnai.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:wongnai.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+
+  // ── Professional ──
+  {
+    cat:'pro', icon:'🐙', name:'GitHub',
+    desc:'ค้นหาโปรไฟล์และโค้ดใน GitHub',
+    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:github.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:github.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'pro', icon:'✍️', name:'Medium',
+    desc:'ค้นหาบทความและโปรไฟล์ใน Medium',
+    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:medium.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:medium.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'pro', icon:'❓', name:'Quora',
+    desc:'ค้นหาโปรไฟล์และคำตอบใน Quora',
+    query:       p => { const kw = p.fullName; return kw ? `site:quora.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:quora.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'pro', icon:'🎓', name:'ResearchGate',
+    desc:'ค้นหานักวิจัยและงานวิจัย',
+    query:       p => { const kw = p.fullName; return kw ? `site:researchgate.net "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:researchgate.net "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'pro', icon:'📋', name:'Slideshare',
+    desc:'ค้นหาการนำเสนอใน Slideshare',
+    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:slideshare.net "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `site:slideshare.net "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+
+  // ── ข่าว ──
+  {
+    cat:'news', icon:'📡', name:'Google News (ทั่วไป)',
+    desc:'ค้นหาข่าวที่มีชื่อบุคคล',
+    query:       p => { if (!p.fullName) return ''; let q=`"${p.fullName}"`; if (p.org) q+=` "${p.org}"`; return q; },
+    strictQuery: p => {
+      if (!p.fullName) return '';
+      const parts = [`"${p.fullName}"`];
+      if (p.org) parts.push(`"${p.org}"`);
+      if (p.loc) parts.push(`"${p.loc}"`);
+      return parts.join(' AND ');
+    },
+  },
+  {
+    cat:'news', icon:'🌍', name:'BBC Thai',
+    desc:'ค้นหาข่าว BBC ภาษาไทย',
+    query:       p => { const kw = p.fullName; return kw ? `site:bbc.com/thai "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:bbc.com/thai "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'news', icon:'📺', name:'Workpoint News',
+    desc:'ค้นหาข่าว Workpoint',
+    query:       p => { const kw = p.fullName; return kw ? `site:workpointnews.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:workpointnews.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+
+  // ── เอกสาร ──
+  {
+    cat:'doc', icon:'📜', name:'Scribd',
+    desc:'ค้นหาเอกสารของบุคคลใน Scribd',
+    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:scribd.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `site:scribd.com "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'doc', icon:'📄', name:'Academia.edu',
+    desc:'ค้นหางานวิชาการของบุคคล',
+    query:       p => { const kw = p.fullName; return kw ? `site:academia.edu "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName; return kw ? `site:academia.edu "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'doc', icon:'📊', name:'Google Docs/Drive',
+    desc:'ค้นหาเอกสาร Google ที่เปิดสาธารณะ',
+    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:docs.google.com "${kw}" OR site:drive.google.com "${kw}"` : ''; },
+    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `(site:docs.google.com OR site:drive.google.com) "${kw}"${ctxSuffix(p)}` : ''; },
+  },
+  {
+    cat:'doc', icon:'📑', name:'PDF ชื่อบุคคล',
+    desc:'ค้นหาไฟล์ PDF ที่มีชื่อบุคคล',
+    query:       p => { const kw = p.fullName; return kw ? `filetype:pdf "${kw}"` : ''; },
+    strictQuery: p => {
+      const kw = p.fullName;
+      if (!kw) return '';
+      const parts = [`filetype:pdf "${kw}"`];
+      if (p.org) parts.push(`"${p.org}"`);
+      return parts.join(' ');
+    },
+  },
+
+  // ── อื่นๆ ──
+  {
+    cat:'misc', icon:'📧', name:'Email Leak',
+    desc:'ค้นหาอีเมลที่หลุดใน Pastebin/web',
+    query:       p => p.email ? `"${p.email}" site:pastebin.com OR site:ghostbin.com` : p.fullName ? `"${p.fullName}" intext:"@gmail.com" OR intext:"@hotmail.com"` : '',
+    strictQuery: p => {
+      if (p.email) return `"${p.email}"${ctxSuffix(p)}`;
+      if (p.fullName) return `"${p.fullName}" (intext:"@gmail.com" OR intext:"@hotmail.com" OR intext:"@yahoo.com")`;
+      return '';
+    },
+  },
+  {
+    cat:'misc', icon:'📱', name:'Phone Search',
+    desc:'ค้นหาเบอร์โทรศัพท์ที่หลุด',
+    query:       p => p.phone ? `"${p.phone}" site:truecaller.com OR intext:"${p.phone}"` : '',
+    strictQuery: p => {
+      if (!p.phone) return '';
+      const parts = [`"${p.phone}"`];
+      if (p.fullName) parts.push(`"${p.fullName}"`);
+      return parts.join(' ');
+    },
+  },
+  {
+    cat:'misc', icon:'🖼️', name:'Google Images',
+    desc:'ค้นหารูปภาพของบุคคล',
+    query:       p => p.fullName||p.nick ? `"${p.fullName||p.nick}"` : '',
+    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `"${kw}"${ctxSuffix(p)}` : ''; },
+    searchUrl:   p => { const kw = p.fullName||p.nick; return kw ? `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(kw)}` : ''; },
+  },
+  {
+    cat:'misc', icon:'💾', name:'Pastebin',
+    desc:'ค้นหาข้อมูลที่หลุดใน Pastebin',
+    query:       p => { const kw = p.email||p.fullName; return kw ? `site:pastebin.com "${kw}"` : ''; },
+    strictQuery: p => {
+      const kw = p.email||p.fullName;
+      return kw ? `site:pastebin.com "${kw}"${ctxSuffix(p)}` : '';
+    },
+  },
+  {
+    cat:'misc', icon:'🌐', name:'ค้นหาครอบคลุม (รวม)',
+    desc:'รวมทุก field เป็น query เดียว',
+    query:       p => {
+      if (!p.fullName && !p.nick) return '';
+      const kw = p.fullName ? `"${p.fullName}"` : `"${p.nick}"`;
+      const extra = [];
+      if (p.org) extra.push(`"${p.org}"`);
+      if (p.loc) extra.push(`"${p.loc}"`);
+      return [kw,...extra].join(' ');
+    },
+    strictQuery: p => {
+      if (!p.fullName && !p.nick) return '';
+      const parts = [];
+      if (p.fullName) parts.push(`"${p.fullName}"`);
+      if (p.nick)     parts.push(`"${p.nick}"`);
+      if (p.org)      parts.push(`"${p.org}"`);
+      if (p.loc)      parts.push(`"${p.loc}"`);
+      if (p.email)    parts.push(`"${p.email}"`);
+      return parts.join(' AND ');
+    },
+  },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+let activeDorkCat = 'all';
+let activePfCat   = 'all';
+let chips         = [];
+let dorkStrict    = false;
+let personStrict  = false;
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+function init() {
+  renderDorkTabs(); renderDorkCards();
+  renderOpSelect(); updateSuggestions();
+  renderPfTabs();   renderPlatforms();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MAIN NAV
+// ══════════════════════════════════════════════════════════════════
+function switchPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.main-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// STRICT TOGGLES
+// ══════════════════════════════════════════════════════════════════
+function toggleDorkStrict() {
+  dorkStrict = document.getElementById('dorkStrictCheck').checked;
+  document.getElementById('dorkStrictBadge').style.display = dorkStrict ? 'inline-block' : 'none';
+  buildQuery(); // re-render query visual
+}
+
+function togglePersonStrict() {
+  personStrict = document.getElementById('personStrictCheck').checked;
+  document.getElementById('personStrictBadge').style.display = personStrict ? 'inline-block' : 'none';
+  renderPlatforms();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DORK BUILDER
+// ══════════════════════════════════════════════════════════════════
+function renderDorkTabs() {
+  document.getElementById('tabs').innerHTML = categories.map(c =>
+    `<div class="tab ${c.id===activeDorkCat?'active':''}" onclick="setDorkCat('${c.id}')">${c.label}</div>`
+  ).join('');
+}
+
+function setDorkCat(id) { activeDorkCat=id; renderDorkTabs(); renderDorkCards(); }
+
+function renderDorkCards() {
+  const list = activeDorkCat==='all' ? dorks : dorks.filter(d=>d.cat===activeDorkCat);
+  document.getElementById('dorkGrid').innerHTML = list.map(d=>`
+    <div class="dork-card" onclick="useDork('${escAttr(d.op)}','${escAttr(d.syntax)}')">
+      <div class="label">${d.label}</div>
+      <div class="title">${d.title}</div>
+      <div class="syntax">${escHtml(d.syntax)}</div>
+      <div class="desc">${d.desc}</div>
+    </div>
+  `).join('');
+}
+
+function useDork(op, syntax) {
+  const qb = document.getElementById('queryBox');
+  qb.textContent = syntax;
+  qb.classList.remove('empty');
+  const sel = document.getElementById('opSelect');
+  for (let o of sel.options) { if (o.value===op) { sel.value=op; break; } }
+  updateSuggestions();
+  toast('โหลด template แล้ว');
+}
+
+function renderOpSelect() {
+  document.getElementById('opSelect').innerHTML = operators.map(o=>
+    `<option value="${escAttr(o.value)}">${o.label}</option>`
+  ).join('');
+}
+
+function updateSuggestions() {
+  const op = document.getElementById('opSelect').value;
+  const sEl = document.getElementById('suggestions');
+  const list = opSuggestions[op]||[];
+  if (!list.length) { sEl.innerHTML=''; return; }
+  sEl.innerHTML = '<span style="font-size:.75rem;color:#666;align-self:center;">ตัวอย่าง:</span>'
+    + list.map(s=>`<div class="sug-chip" onclick="setKw('${escAttr(s)}')">${escHtml(s)}</div>`).join('');
+}
+
+function setKw(v) { document.getElementById('kwInput').value=v; }
+
+function addChip() {
+  const op = document.getElementById('opSelect').value;
+  let kw    = document.getElementById('kwInput').value.trim();
+  if (!kw) { alert('กรุณากรอก keyword'); return; }
+
+  // Strict: auto-wrap in quotes if not already quoted and no operator prefix
+  if (dorkStrict && !kw.startsWith('"') && !kw.endsWith('"')) {
+    // Don't double-quote date values (after:/before:) or URLs/domain
+    const skipQuote = ['after:','before:','site:','cache:','related:'].includes(op);
+    if (!skipQuote) kw = `"${kw}"`;
+  }
+
+  chips.push({op, kw, strict: dorkStrict});
+  document.getElementById('kwInput').value='';
+  renderChips(); buildQuery();
+}
+
+function removeChip(i) { chips.splice(i,1); renderChips(); buildQuery(); }
+
+function renderChips() {
+  const el = document.getElementById('chips');
+  if (!chips.length) { el.innerHTML=''; return; }
+  el.innerHTML = chips.map((c,i)=>{
+    const txt = c.op ? `${c.op}${c.kw}` : c.kw;
+    return `<div class="chip${c.strict?' strict':''}">${escHtml(txt)}<span class="remove" onclick="removeChip(${i})">✕</span></div>`;
+  }).join('');
+}
+
+function buildQuery() {
+  const qb = document.getElementById('queryBox');
+  if (!chips.length) {
+    qb.textContent='— ยังไม่มี query —';
+    qb.classList.add('empty'); qb.classList.remove('strict-on');
+    return;
+  }
+  qb.textContent = chips.map(c => c.op ? c.op+c.kw : c.kw).join(' ');
+  qb.classList.remove('empty');
+  qb.classList.toggle('strict-on', dorkStrict);
+}
+
+function getQuery() {
+  const txt = document.getElementById('queryBox').textContent.trim();
+  return txt==='— ยังไม่มี query —' ? '' : txt;
+}
+
+function doSearch() {
+  const q = getQuery();
+  if (!q) { alert('กรุณาสร้าง query ก่อน'); return; }
+  window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank');
+}
+
+function copyQuery() {
+  const q = getQuery();
+  if (!q) { alert('ไม่มี query'); return; }
+  navigator.clipboard.writeText(q).then(()=>toast('Copied!'));
+}
+
+function clearAll() {
+  chips=[];
+  renderChips();
+  const qb = document.getElementById('queryBox');
+  qb.textContent='— ยังไม่มี query —';
+  qb.classList.add('empty'); qb.classList.remove('strict-on');
+  document.getElementById('kwInput').value='';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PERSON SEARCH
+// ══════════════════════════════════════════════════════════════════
+function getPerson() {
+  const first = document.getElementById('pFirstName').value.trim();
+  const last  = document.getElementById('pLastName').value.trim();
+  return {
+    firstName: first, lastName: last,
+    fullName:  [first,last].filter(Boolean).join(' '),
+    nick:      document.getElementById('pNick').value.trim(),
+    org:       document.getElementById('pOrg').value.trim(),
+    loc:       document.getElementById('pLocation').value.trim(),
+    email:     document.getElementById('pEmail').value.trim(),
+    phone:     document.getElementById('pPhone').value.trim(),
+  };
+}
+
+function renderPfTabs() {
+  document.getElementById('pfTabs').innerHTML = platformCats.map(c=>
+    `<div class="pf-tab ${c.id===activePfCat?'active':''}" onclick="setPfCat('${c.id}')">${c.label}</div>`
+  ).join('');
+}
+
+function setPfCat(id) { activePfCat=id; renderPfTabs(); renderPlatforms(); }
+
+function renderPlatforms() {
+  const p = getPerson();
+  const filtered = activePfCat==='all' ? platforms : platforms.filter(pl=>pl.cat===activePfCat);
+  const catLabels = { social:'💬 Social Media', thai:'🇹🇭 เว็บไทย', pro:'💼 Professional', news:'📰 ข่าว', doc:'📄 เอกสาร', misc:'🔎 อื่นๆ' };
+
+  let html = '';
+  if (activePfCat==='all') {
+    for (const cat of ['social','thai','pro','news','doc','misc']) {
+      const items = filtered.filter(pl=>pl.cat===cat);
+      if (!items.length) continue;
+      html += `<div class="platform-section-title">${catLabels[cat]}</div>`;
+      html += `<div class="platform-grid">${items.map(pl=>pfCard(pl,p)).join('')}</div>`;
+    }
+  } else {
+    html = `<div class="platform-grid">${filtered.map(pl=>pfCard(pl,p)).join('')}</div>`;
+  }
+  document.getElementById('platformGrid').innerHTML = html;
+}
+
+function getEffectiveQuery(pl, p) {
+  // Use strictQuery if personStrict and the platform has it
+  if (personStrict && pl.strictQuery) return pl.strictQuery(p);
+  return pl.query(p);
+}
+
+function pfCard(pl, p) {
+  const q    = getEffectiveQuery(pl, p);
+  const noQ  = !q;
+  const hasAny = p.fullName||p.nick||p.email||p.phone;
+  const url  = pl.searchUrl ? pl.searchUrl(p) : (q ? `https://www.google.com/search?q=${encodeURIComponent(q)}` : '');
+  const qTxt = noQ ? (hasAny ? '— ข้อมูลไม่พอ —' : '— กรอกชื่อก่อน —') : q;
+  const qCls = noQ ? 'no-name' : personStrict ? 'strict-q' : '';
+  const cardCls = personStrict && !noQ ? 'strict-card' : '';
+  return `
+    <div class="platform-card ${cardCls}">
+      <div class="pf-header">
+        <div class="pf-icon">${pl.icon}</div>
+        <div>
+          <div class="pf-name">${pl.name}${personStrict&&!noQ?'<span class="strict-badge" style="font-size:.6rem;">STRICT</span>':''}</div>
+          <div class="pf-desc">${pl.desc}</div>
+        </div>
+      </div>
+      <div class="pf-query ${qCls}">${escHtml(qTxt)}</div>
+      <div class="pf-actions">
+        <button class="pf-btn pf-btn-go"   onclick="pfSearch('${escAttr(url)}')"  ${!url?'disabled style="opacity:.35;cursor:default"':''}>&#x1F50D; ค้นหา</button>
+        <button class="pf-btn pf-btn-copy" onclick="pfCopy('${escAttr(q)}')"   ${!q  ?'disabled style="opacity:.35;cursor:default"':''}>&#x1F4CB; Copy</button>
+      </div>
+    </div>
+  `;
+}
+
+function pfSearch(url) { if (url && url!=='undefined') window.open(url,'_blank'); }
+function pfCopy(q)     { if (q) navigator.clipboard.writeText(q).then(()=>toast('Copied!')); }
+
+function openAll() {
+  const p = getPerson();
+  if (!p.fullName&&!p.nick&&!p.email&&!p.phone) { alert('กรุณากรอกชื่อหรือข้อมูลก่อน'); return; }
+  let count=0;
+  platforms.forEach(pl=>{
+    const q = getEffectiveQuery(pl,p);
+    if (!q) return;
+    const url = pl.searchUrl ? pl.searchUrl(p) : `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+    if (url) { window.open(url,'_blank'); count++; }
+  });
+  toast(`เปิด ${count} แท็บ`);
+}
+
+function openCategory() {
+  const p = getPerson();
+  if (!p.fullName&&!p.nick&&!p.email&&!p.phone) { alert('กรุณากรอกชื่อหรือข้อมูลก่อน'); return; }
+  const filtered = activePfCat==='all' ? platforms : platforms.filter(pl=>pl.cat===activePfCat);
+  let count=0;
+  filtered.forEach(pl=>{
+    const q = getEffectiveQuery(pl,p);
+    if (!q) return;
+    const url = pl.searchUrl ? pl.searchUrl(p) : `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+    if (url) { window.open(url,'_blank'); count++; }
+  });
+  toast(`เปิด ${count} แท็บ (หมวดนี้)`);
+}
+
+function copyAllQueries() {
+  const p = getPerson();
+  const lines = platforms
+    .map(pl=>{ const q=getEffectiveQuery(pl,p); return q?`[${pl.name}] ${q}`:null; })
+    .filter(Boolean);
+  if (!lines.length) { alert('กรอกชื่อก่อน'); return; }
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>toast(`Copied ${lines.length} queries!`));
+}
+
+function clearPerson() {
+  ['pFirstName','pLastName','pNick','pOrg','pLocation','pEmail','pPhone'].forEach(id=>document.getElementById(id).value='');
+  renderPlatforms();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════════
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+init();
+</script>
+</body>
+</html>
