@@ -1,1062 +1,1278 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Dork Tool</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Dork Tool</title>
+<style>
+:root{--bg:#0f0f1a;--bg2:#1a1a2e;--bg3:#12121f;--bg4:#0d1117;--text:#e0e0e0;--text2:#aaa;--text3:#666;--border:#2a2a45;--border2:#333;--accent:#7eb8f7;--accent2:#80cbc4;--warn:#ffd54f;--danger:#f48fb1;--chip-bg:#1e2a40;--chip-border:#3a4a60}
+body.light{--bg:#f0f4f8;--bg2:#ffffff;--bg3:#e8edf4;--bg4:#f8fafc;--text:#1a1a2e;--text2:#4a5568;--text3:#94a3b8;--border:#cbd5e1;--border2:#e2e8f0;--accent:#2563eb;--accent2:#0891b2;--warn:#b45309;--danger:#dc2626;--chip-bg:#dbeafe;--chip-border:#93c5fd}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:'Segoe UI','Noto Sans Thai',system-ui,sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+input,textarea,select{font-family:inherit}
+code{font-family:'Consolas','Courier New',monospace}
+#app{display:flex;flex-direction:column;min-height:100vh}
+#topbar{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;height:52px;position:sticky;top:0;z-index:100;gap:12px}
+#topbar .logo{font-size:1.1rem;font-weight:700;color:var(--accent);white-space:nowrap;flex-shrink:0}
+#topbar .logo span{color:var(--text2);font-weight:400;font-size:.85rem;margin-left:6px}
+#nav-tabs{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+#nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{background:none;border:none;color:var(--text2);padding:6px 12px;border-radius:6px;font-size:.85rem;white-space:nowrap;transition:background .15s,color .15s}
+.nav-tab:hover{background:var(--bg3);color:var(--text)}
+.nav-tab.active{background:var(--accent);color:#fff}
+#theme-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 10px;font-size:.85rem;flex-shrink:0}
+#theme-btn:hover{border-color:var(--accent)}
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0f0f1a;
-      color: #e0e0e0;
-      min-height: 100vh;
-      padding: 24px 16px 60px;
-    }
+/* ── HAMBURGER (mobile only) ── */
+#hamburger{display:none;flex-direction:column;justify-content:center;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;flex-shrink:0}
+#hamburger span{display:block;width:18px;height:2px;background:var(--text);border-radius:2px;transition:all .25s}
+#hamburger.open span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+#hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+#hamburger.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
 
-    h1 { text-align:center; font-size:1.8rem; color:#7eb8f7; margin-bottom:6px; letter-spacing:1px; }
-    .subtitle { text-align:center; font-size:0.85rem; color:#888; margin-bottom:24px; }
-    .container { max-width:920px; margin:0 auto; }
+/* ── MOBILE DROPDOWN MENU ── */
+#mobile-menu{display:none;position:absolute;top:52px;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);z-index:99;padding:8px;flex-direction:column;gap:2px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+#mobile-menu.open{display:flex}
+.mob-tab{background:none;border:none;color:var(--text2);padding:10px 14px;border-radius:8px;font-size:.9rem;text-align:left;width:100%;transition:background .15s,color .15s;cursor:pointer}
+.mob-tab:hover{background:var(--bg3);color:var(--text)}
+.mob-tab.active{background:var(--accent);color:#fff}
 
-    /* ── MAIN NAV ── */
-    .main-nav {
-      display:flex; gap:0;
-      background:#1a1a2e; border:1px solid #2a2a45;
-      border-radius:12px; overflow:hidden; margin-bottom:28px;
-    }
-    .main-nav-btn {
-      flex:1; padding:13px; text-align:center; cursor:pointer;
-      font-size:0.92rem; font-weight:600; color:#666;
-      border:none; background:transparent; border-radius:0; transition:all .2s;
-    }
-    .main-nav-btn.active { background:#7eb8f7; color:#0f0f1a; }
-    .main-nav-btn:hover:not(.active) { color:#7eb8f7; }
-
-    /* ── STRICT TOGGLE ── */
-    .strict-bar {
-      display:flex; align-items:center; gap:12px;
-      background:#1a1a2e; border:1px solid #2a2a45; border-radius:10px;
-      padding:10px 16px; margin-bottom:18px;
-    }
-    .strict-bar .strict-label { font-size:0.85rem; color:#aaa; flex:1; }
-    .strict-bar .strict-label strong { color:#ffd54f; }
-    .strict-bar .strict-desc  { font-size:0.75rem; color:#666; }
-
-    .strict-toggle {
-      position:relative; width:48px; height:26px; flex-shrink:0;
-    }
-    .strict-toggle input { opacity:0; width:0; height:0; }
-    .strict-slider {
-      position:absolute; inset:0; border-radius:26px;
-      background:#333; cursor:pointer; transition:.3s;
-    }
-    .strict-slider::before {
-      content:''; position:absolute;
-      width:20px; height:20px; border-radius:50%;
-      left:3px; bottom:3px;
-      background:#aaa; transition:.3s;
-    }
-    .strict-toggle input:checked + .strict-slider { background:#ffd54f; }
-    .strict-toggle input:checked + .strict-slider::before { transform:translateX(22px); background:#0f0f1a; }
-
-    .strict-badge {
-      display:inline-block; background:#ffd54f; color:#0f0f1a;
-      font-size:0.7rem; font-weight:800; padding:2px 7px; border-radius:10px;
-      margin-left:6px; vertical-align:middle; letter-spacing:.5px;
-    }
-
-    /* ── PAGES ── */
-    .page { display:none; }
-    .page.active { display:block; }
-
-    /* ── CATEGORY TABS ── */
-    .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
-    .tab {
-      background:#1e1e30; border:1px solid #333; color:#aaa;
-      padding:6px 14px; border-radius:20px; cursor:pointer;
-      font-size:0.82rem; transition:all .2s;
-    }
-    .tab:hover { border-color:#7eb8f7; color:#7eb8f7; }
-    .tab.active { background:#7eb8f7; color:#0f0f1a; border-color:#7eb8f7; font-weight:600; }
-
-    /* ── DORK GRID ── */
-    .dork-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; margin-bottom:24px; }
-    .dork-card {
-      background:#1a1a2e; border:1px solid #2a2a45;
-      border-radius:10px; padding:14px; cursor:pointer; transition:all .2s;
-    }
-    .dork-card:hover { border-color:#7eb8f7; transform:translateY(-2px); }
-    .dork-card .label { font-size:.73rem; color:#7eb8f7; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
-    .dork-card .title { font-size:.93rem; font-weight:600; color:#ddd; margin-bottom:6px; }
-    .dork-card .syntax {
-      font-family:'Courier New',monospace; font-size:.76rem; color:#90caf9;
-      background:#0d1117; padding:4px 8px; border-radius:4px; word-break:break-all;
-    }
-    .dork-card .desc { font-size:.74rem; color:#777; margin-top:6px; }
-
-    /* ── BUILDER ── */
-    .builder { background:#1a1a2e; border:1px solid #2a2a45; border-radius:12px; padding:20px; margin-bottom:20px; }
-    .builder h2 { font-size:1rem; color:#7eb8f7; margin-bottom:14px; }
-    .input-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
-    .input-group { display:flex; flex-direction:column; flex:1; min-width:160px; }
-    .input-group label { font-size:.75rem; color:#888; margin-bottom:4px; }
-    .input-group input, .input-group select {
-      background:#0d1117; border:1px solid #333; color:#e0e0e0;
-      padding:8px 12px; border-radius:6px; font-size:.9rem; outline:none; transition:border-color .2s;
-    }
-    .input-group input:focus, .input-group select:focus { border-color:#7eb8f7; }
-    .input-group select option { background:#1a1a2e; }
-
-    /* ── QUERY BOX ── */
-    .query-box {
-      background:#0d1117; border:1px solid #333; border-radius:8px;
-      padding:14px; font-family:'Courier New',monospace; font-size:.9rem;
-      color:#90caf9; word-break:break-all; min-height:48px; margin-bottom:14px;
-    }
-    .query-box.empty { color:#444; font-style:italic; }
-    .query-box.strict-on { border-color:#ffd54f55; }
-
-    .actions { display:flex; gap:10px; flex-wrap:wrap; }
-    button { padding:9px 20px; border:none; border-radius:6px; cursor:pointer; font-size:.88rem; font-weight:600; transition:opacity .2s; }
-    button:hover { opacity:.85; }
-    .btn-search  { background:#7eb8f7; color:#0f0f1a; }
-    .btn-copy    { background:#2a2a45; color:#e0e0e0; }
-    .btn-clear   { background:#2a1a1a; color:#f48fb1; }
-    .btn-add     { background:#1e3a2a; color:#80cbc4; }
-    .btn-orange  { background:#ff9800; color:#0f0f1a; }
-    .btn-purple  { background:#9c27b0; color:#fff; }
-
-    /* ── CHIPS ── */
-    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; min-height:32px; }
-    .chip {
-      background:#1e2a40; border:1px solid #3a4a60;
-      border-radius:16px; padding:4px 12px; font-size:.8rem; color:#90caf9;
-      display:flex; align-items:center; gap:6px;
-    }
-    .chip.strict { border-color:#ffd54f88; color:#ffd54f; background:#1e2010; }
-    .chip .remove { cursor:pointer; color:#f48fb1; font-size:.9rem; line-height:1; }
-
-    /* ── SUGGESTIONS ── */
-    .suggestions { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-    .sug-chip {
-      background:#12121f; border:1px dashed #444; border-radius:14px;
-      padding:3px 10px; font-size:.75rem; color:#aaa; cursor:pointer; transition:all .15s;
-    }
-    .sug-chip:hover { border-color:#7eb8f7; color:#7eb8f7; }
-
-    /* ── PERSON SEARCH ── */
-    .person-box { background:#1a1a2e; border:1px solid #2a2a45; border-radius:12px; padding:22px; margin-bottom:22px; }
-    .person-box h2 { font-size:1rem; color:#80cbc4; margin-bottom:6px; }
-    .person-box .hint { font-size:.78rem; color:#666; margin-bottom:16px; }
-    .person-inputs { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-bottom:16px; }
-    .person-inputs .input-group label { color:#80cbc4; }
-
-    /* ── PLATFORM ── */
-    .platform-section-title {
-      font-size:.8rem; color:#666; text-transform:uppercase; letter-spacing:1px;
-      margin:18px 0 10px; padding-bottom:6px; border-bottom:1px solid #2a2a45;
-    }
-    .platform-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; margin-bottom:10px; }
-    .platform-card { background:#12121f; border:1px solid #2a2a45; border-radius:10px; padding:14px; transition:all .2s; }
-    .platform-card:hover { border-color:#80cbc4; }
-    .platform-card.strict-card { border-color:#ffd54f44; }
-    .platform-card.strict-card:hover { border-color:#ffd54f; }
-    .pf-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-    .pf-icon   { font-size:1.3rem; width:32px; text-align:center; }
-    .pf-name   { font-size:.9rem; font-weight:700; color:#ddd; }
-    .pf-desc   { font-size:.73rem; color:#666; }
-    .pf-query  {
-      font-family:'Courier New',monospace; font-size:.73rem; color:#80cbc4;
-      background:#0d1117; padding:6px 8px; border-radius:5px;
-      word-break:break-all; margin-bottom:10px; min-height:36px;
-    }
-    .pf-query.no-name  { color:#444; font-style:italic; }
-    .pf-query.strict-q { color:#ffd54f; }
-    .pf-actions { display:flex; gap:6px; }
-    .pf-btn { flex:1; padding:6px 8px; border:none; border-radius:5px; cursor:pointer; font-size:.76rem; font-weight:600; transition:opacity .2s; }
-    .pf-btn:hover { opacity:.8; }
-    .pf-btn-go   { background:#7eb8f7; color:#0f0f1a; }
-    .pf-btn-copy { background:#2a2a45; color:#ccc; }
-    .person-all-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:1px solid #2a2a45; }
-
-    /* ── PLATFORM FILTER TABS ── */
-    .pf-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-    .pf-tab {
-      background:#12121f; border:1px solid #2a2a45; color:#888;
-      padding:4px 12px; border-radius:14px; cursor:pointer; font-size:.78rem; transition:all .15s;
-    }
-    .pf-tab:hover  { border-color:#80cbc4; color:#80cbc4; }
-    .pf-tab.active { background:#80cbc4; color:#0f0f1a; border-color:#80cbc4; font-weight:700; }
-
-    hr { border:none; border-top:1px solid #2a2a45; margin:20px 0; }
-
-    #toast {
-      position:fixed; bottom:24px; left:50%;
-      transform:translateX(-50%) translateY(60px);
-      background:#7eb8f7; color:#0f0f1a;
-      padding:10px 22px; border-radius:24px; font-size:.85rem; font-weight:600;
-      transition:transform .3s ease; z-index:999; pointer-events:none;
-    }
-    #toast.show { transform:translateX(-50%) translateY(0); }
-  </style>
+/* ── BOTTOM SAFE AREA ── */
+@media(max-width:600px){
+  #nav-tabs{display:none}
+  #hamburger{display:flex}
+  #topbar{position:sticky;top:0}
+  #main{padding:14px 10px 80px}
+  .dork-grid{grid-template-columns:1fr}
+  .sec-grid{grid-template-columns:1fr}
+  .tech-grid{grid-template-columns:1fr 1fr}
+  .user-grid{grid-template-columns:1fr 1fr}
+  .person-grid{grid-template-columns:1fr}
+  .subdomain-results{grid-template-columns:1fr}
+  .query-actions{gap:5px}
+  .query-actions .btn{font-size:.78rem;padding:5px 9px}
+  .btn{font-size:.8rem;padding:5px 10px}
+  .card{padding:12px}
+  .op-row{flex-direction:column;align-items:stretch}
+  .op-row select{width:100%!important}
+  .row{flex-wrap:wrap}
+  .person-fields{grid-template-columns:1fr}
+}
+#main{flex:1;padding:20px 16px;max-width:1200px;margin:0 auto;width:100%}
+.page{display:none}
+.page.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+.card-title{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title{font-size:.78rem;font-weight:600;color:var(--text3);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:.82rem;transition:background .15s,border-color .15s,color .15s;cursor:pointer}
+.btn:hover{background:var(--bg2);border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{opacity:.9;color:#fff}
+.btn.danger{background:none;border-color:var(--danger);color:var(--danger)}
+.btn.danger:hover{background:var(--danger);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+input[type="text"],input[type="email"],input[type="tel"],input[type="url"],textarea,select{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:.85rem;outline:none;transition:border-color .15s}
+input[type="text"]:focus,input[type="email"]:focus,input[type="tel"]:focus,input[type="url"]:focus,textarea:focus,select:focus{border-color:var(--accent)}
+select option{background:var(--bg2)}
+.chip-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-height:28px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:20px;padding:3px 10px;font-size:.8rem;color:var(--text)}
+.chip.strict{border-color:var(--warn);color:var(--warn)}
+.chip.clickable{cursor:pointer}
+.chip.clickable:hover{border-color:var(--accent);color:var(--accent)}
+.chip .chip-x{cursor:pointer;color:var(--text3);font-size:.75rem;margin-left:2px}
+.chip .chip-x:hover{color:var(--danger)}
+.chip .chip-q{cursor:pointer;color:var(--text3);font-size:.75rem}
+.chip .chip-q:hover{color:var(--accent)}
+.query-box{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'Consolas',monospace;font-size:.85rem;color:var(--accent);word-break:break-all;min-height:44px;line-height:1.5;transition:border-color .2s}
+.query-box.strict-active{border-color:var(--warn)}
+.strict-badge{display:inline-flex;align-items:center;gap:5px;background:none;border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:.78rem;color:var(--text2);cursor:pointer;transition:all .15s}
+.strict-badge.on{border-color:var(--warn);color:var(--warn);background:rgba(255,213,79,.08)}
+.strict-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:background .15s}
+.strict-badge.on .dot{background:var(--warn)}
+.cat-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.cat-tab{background:none;border:1px solid var(--border);color:var(--text2);border-radius:20px;padding:3px 10px;font-size:.78rem;transition:all .15s;cursor:pointer}
+.cat-tab:hover{border-color:var(--accent);color:var(--accent)}
+.cat-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.dork-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.dork-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s}
+.dork-card:hover{border-color:var(--accent);background:var(--bg4)}
+.dork-card .dc-syntax{font-family:monospace;font-size:.78rem;color:var(--accent);margin-bottom:4px;word-break:break-all}
+.dork-card .dc-desc{font-size:.75rem;color:var(--text2)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.flex1{flex:1;min-width:0}
+.mt8{margin-top:8px}
+.mt12{margin-top:12px}
+.label{font-size:.78rem;color:var(--text3);margin-bottom:4px;display:block}
+.sugg-chip{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:12px;padding:2px 9px;font-size:.75rem;cursor:pointer;display:inline-block}
+.sugg-chip:hover{border-color:var(--accent);color:var(--accent)}
+.query-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.subdomain-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:8px;margin-top:10px}
+.sub-result-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px}
+.sub-result-card .sub-q{font-family:monospace;font-size:.8rem;color:var(--accent);margin-bottom:8px;word-break:break-all}
+.person-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.person-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.person-card .pc-name{font-size:.85rem;font-weight:600;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.person-card .pc-query{font-family:monospace;font-size:.72rem;color:var(--text2);word-break:break-all;margin-bottom:8px;line-height:1.4}
+.person-card .pc-actions{display:flex;gap:5px;flex-wrap:wrap}
+.person-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:520px){.person-fields{grid-template-columns:1fr}}
+.field-group label{font-size:.75rem;color:var(--text3);display:block;margin-bottom:3px}
+.field-group input{width:100%}
+.pill-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.pill-tab{background:none;border:1px solid var(--border);color:var(--text2);border-radius:20px;padding:4px 12px;font-size:.78rem;cursor:pointer;transition:all .15s}
+.pill-tab:hover{border-color:var(--accent);color:var(--accent)}
+.pill-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.sec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.sec-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.sec-card.full-width{grid-column:1/-1}
+.sec-card input{width:100%;margin-bottom:10px}
+.sec-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sec-link-btn{display:inline-flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 10px;font-size:.78rem;cursor:pointer;transition:all .15s}
+.sec-link-btn:hover{border-color:var(--accent);color:var(--accent)}
+.sec-dork-preview{background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:monospace;font-size:.78rem;color:var(--accent2);margin-top:8px;word-break:break-all;min-height:32px;line-height:1.4}
+.shodan-out{background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:monospace;font-size:.8rem;color:var(--accent2);min-height:36px;margin-bottom:8px;word-break:break-all;line-height:1.4}
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:8px;margin-top:10px}
+.tech-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:border-color .15s}
+.tech-card:hover{border-color:var(--accent)}
+.tech-card .tc-name{font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:3px}
+.tech-card .tc-syntax{font-family:monospace;font-size:.72rem;color:var(--accent);margin-bottom:3px;word-break:break-all}
+.tech-card .tc-desc{font-size:.72rem;color:var(--text3)}
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.user-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.user-card .uc-icon{font-size:1.1rem}
+.user-card .uc-name{font-size:.82rem;font-weight:600;color:var(--text)}
+.user-card .uc-cat{font-size:.7rem;color:var(--text3)}
+.user-card .uc-btn{margin-top:4px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--accent);font-size:.75rem;padding:4px 8px;cursor:pointer;transition:all .15s}
+.user-card .uc-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.user-card .uc-btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.saved-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.saved-item .si-name{font-size:.9rem;font-weight:600;color:var(--text);margin-bottom:4px}
+.saved-item .si-query{font-family:monospace;font-size:.8rem;color:var(--accent);background:var(--bg4);padding:6px 10px;border-radius:5px;margin-bottom:8px;word-break:break-all}
+.saved-item .si-date{font-size:.72rem;color:var(--text3);margin-bottom:6px}
+.saved-item .si-actions{display:flex;gap:6px;flex-wrap:wrap}
+.saved-empty{text-align:center;color:var(--text3);padding:48px 20px;font-size:.9rem;line-height:1.8}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.hidden{display:none}
+.modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 24px;max-width:480px;width:100%;position:relative}
+.modal-title{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:10px}
+.modal-body{font-size:.85rem;color:var(--text2);line-height:1.6;margin-bottom:12px}
+.modal-example{background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:monospace;font-size:.82rem;color:var(--accent2);word-break:break-all}
+.modal-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text3);font-size:1.1rem;cursor:pointer}
+.modal-close:hover{color:var(--danger)}
+#toast-wrap{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast-item{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);color:var(--text);padding:10px 16px;border-radius:8px;font-size:.85rem;pointer-events:auto;animation:toastIn .25s ease;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:280px}
+@keyframes toastIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+.reverse-img-bar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.wayback-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.wayback-row input{flex:1;min-width:180px}
+.top-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.op-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+#suggestion-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;min-height:24px}
+</style>
 </head>
 <body>
-<div class="container">
-  <h1>&#x1F50D; Google Dork Tool</h1>
-  <p class="subtitle">ค้นหาแบบเจาะลึก — Google Dork Builder &amp; Person Search (OSINT)</p>
-
-  <!-- MAIN NAV -->
-  <div class="main-nav">
-    <button class="main-nav-btn active" onclick="switchPage('dork',this)">&#x2699;&#xFE0F; Dork Builder</button>
-    <button class="main-nav-btn" onclick="switchPage('person',this)">&#x1F464; Person Search</button>
+<div id="app">
+  <!-- TOPBAR -->
+  <div id="topbar" style="position:relative">
+    <div class="logo">🔍 DorkTool <span>v2</span></div>
+    <div id="nav-tabs">
+      <button class="nav-tab active" data-page="builder" onclick="showPage('builder',this)">⚙️ Dork Builder</button>
+      <button class="nav-tab" data-page="person"   onclick="showPage('person',this)">👤 Person Search</button>
+      <button class="nav-tab" data-page="security" onclick="showPage('security',this)">🛡️ Security Tools</button>
+      <button class="nav-tab" data-page="username" onclick="showPage('username',this)">🔎 Username Hunter</button>
+      <button class="nav-tab" data-page="saved"    onclick="showPage('saved',this)">📚 Saved Dorks</button>
+    </div>
+    <button id="theme-btn" onclick="toggleTheme()">☀️</button>
+    <!-- Hamburger (mobile) -->
+    <button id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 
-  <!-- ======================================================= PAGE: DORK ── -->
-  <div class="page active" id="page-dork">
-
-    <!-- Strict toggle -->
-    <div class="strict-bar">
-      <div>
-        <div class="strict-label"><strong>Strict Mode</strong> <span id="dorkStrictBadge" style="display:none" class="strict-badge">ON</span></div>
-        <div class="strict-desc">เปิด = keyword ที่เพิ่มจะถูกห่อด้วย <code>"..."</code> อัตโนมัติ เพื่อค้นหาวลีแน่นอน</div>
-      </div>
-      <label class="strict-toggle">
-        <input type="checkbox" id="dorkStrictCheck" onchange="toggleDorkStrict()" />
-        <span class="strict-slider"></span>
-      </label>
-    </div>
-
-    <div class="tabs" id="tabs"></div>
-    <div class="dork-grid" id="dorkGrid"></div>
-    <hr />
-    <div class="builder">
-      <h2>&#x2699;&#xFE0F; Query Builder</h2>
-      <div class="chips" id="chips"></div>
-      <div class="input-row">
-        <div class="input-group">
-          <label>Operator</label>
-          <select id="opSelect" onchange="updateSuggestions()"></select>
-        </div>
-        <div class="input-group">
-          <label>Keyword / Value</label>
-          <input id="kwInput" type="text" placeholder="กรอก keyword..." onkeydown="if(event.key==='Enter') addChip()" />
-        </div>
-        <div class="input-group" style="justify-content:flex-end;min-width:110px;">
-          <label>&nbsp;</label>
-          <button class="btn-add" onclick="addChip()">+ เพิ่ม</button>
-        </div>
-      </div>
-      <div class="suggestions" id="suggestions"></div>
-      <hr />
-      <div style="margin-bottom:10px;font-size:.8rem;color:#666;">Query ที่จะใช้ค้นหา</div>
-      <div class="query-box empty" id="queryBox">— ยังไม่มี query —</div>
-      <div class="actions">
-        <button class="btn-search" onclick="doSearch()">&#x1F50D; ค้นหาใน Google</button>
-        <button class="btn-copy"   onclick="copyQuery()">&#x1F4CB; Copy Query</button>
-        <button class="btn-clear"  onclick="clearAll()">&#x2716; ล้างทั้งหมด</button>
-      </div>
-    </div>
+  <!-- Mobile dropdown -->
+  <div id="mobile-menu">
+    <button class="mob-tab active" data-page="builder" onclick="showPageMobile('builder',this)">⚙️ Dork Builder</button>
+    <button class="mob-tab" data-page="person"   onclick="showPageMobile('person',this)">👤 Person Search</button>
+    <button class="mob-tab" data-page="security" onclick="showPageMobile('security',this)">🛡️ Security Tools</button>
+    <button class="mob-tab" data-page="username" onclick="showPageMobile('username',this)">🔎 Username Hunter</button>
+    <button class="mob-tab" data-page="saved"    onclick="showPageMobile('saved',this)">📚 Saved Dorks</button>
   </div>
 
-  <!-- ======================================================= PAGE: PERSON ── -->
-  <div class="page" id="page-person">
+  <div id="main">
 
-    <!-- Strict toggle -->
-    <div class="strict-bar">
-      <div>
-        <div class="strict-label"><strong>Strict Mode</strong> <span id="personStrictBadge" style="display:none" class="strict-badge">ON</span></div>
-        <div class="strict-desc">เปิด = ใช้ <code>"ชื่อ นามสกุล"</code> + เพิ่มบริษัท/เมืองเข้าไปในทุก query เพื่อเจาะจงสูงสุด</div>
+    <!-- PAGE 1: DORK BUILDER -->
+    <div id="pg-builder" class="page active">
+      <div class="top-row">
+        <div style="font-size:1.05rem;font-weight:700;">⚙️ Dork Builder</div>
+        <button class="strict-badge" id="strictBadge" onclick="toggleStrict()">
+          <span class="dot"></span> Strict Mode
+        </button>
       </div>
-      <label class="strict-toggle">
-        <input type="checkbox" id="personStrictCheck" onchange="togglePersonStrict()" />
-        <span class="strict-slider"></span>
-      </label>
+      <div class="card">
+        <div class="op-row">
+          <select id="opSelect" onchange="renderSuggestions()" style="width:175px;flex-shrink:0">
+            <option value="">-- Operator --</option>
+            <option value="site:">site:</option>
+            <option value="intitle:">intitle:</option>
+            <option value="allintitle:">allintitle:</option>
+            <option value="inurl:">inurl:</option>
+            <option value="allinurl:">allinurl:</option>
+            <option value="intext:">intext:</option>
+            <option value="allintext:">allintext:</option>
+            <option value="filetype:">filetype:</option>
+            <option value="ext:">ext:</option>
+            <option value="cache:">cache:</option>
+            <option value="related:">related:</option>
+            <option value="define:">define:</option>
+            <option value="after:">after:</option>
+            <option value="before:">before:</option>
+            <option value="-site:">-site:</option>
+            <option value="OR">OR</option>
+            <option value="AND">AND</option>
+            <option value="-">- (exclude)</option>
+            <option value='"'>&quot; &quot; (exact)</option>
+          </select>
+          <input type="text" id="kwInput" placeholder="คำค้นหา / ค่า..." style="flex:1;min-width:120px"
+            onkeydown="if(event.key==='Enter')addChip()">
+          <button class="btn primary" onclick="addChip()">+ เพิ่ม</button>
+        </div>
+        <div id="suggestion-wrap"></div>
+        <div class="section-title" style="margin-top:10px">Chips</div>
+        <div class="chip-wrap" id="chips-wrap"></div>
+        <div class="section-title" style="margin-top:10px">Query</div>
+        <div class="query-box" id="queryBox">—</div>
+        <div class="query-actions">
+          <button class="btn primary" onclick="doSearch()">🔍 ค้นหาใน Google</button>
+          <button class="btn" onclick="copyQuery()">📋 Copy</button>
+          <button class="btn" onclick="showSaveDialog()">💾 บันทึก</button>
+          <button class="btn danger" onclick="clearBuilder()">✖ ล้าง</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📚 Dork Templates</div>
+        <div class="cat-tabs" id="catTabs"></div>
+        <div class="dork-grid" id="dorkGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span>🕑 Query History</span>
+          <button class="btn danger" style="font-size:.75rem;padding:3px 9px" onclick="clearHistory()">ล้างประวัติ</button>
+        </div>
+        <div class="chip-wrap" id="history-chips"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌐 Subdomain Finder</div>
+        <div class="row">
+          <input type="text" id="subInput" placeholder="example.com" style="flex:1"
+            onkeydown="if(event.key==='Enter')genSubdomain()">
+          <button class="btn primary" onclick="genSubdomain()">สร้าง Dorks</button>
+        </div>
+        <div class="subdomain-results" id="subResults"></div>
+      </div>
     </div>
 
-    <div class="person-box">
-      <h2>&#x1F464; ค้นหาบุคคลผ่าน Google Dork</h2>
-      <p class="hint">กรอกข้อมูลที่รู้จัก — ไม่จำเป็นต้องครบ — query สร้างอัตโนมัติ (Strict Mode เพิ่ม context ให้แม่นยำขึ้น)</p>
-
-      <div class="person-inputs">
-        <div class="input-group">
-          <label>ชื่อ (First Name)</label>
-          <input id="pFirstName" type="text" placeholder="เช่น สมชาย / John" oninput="renderPlatforms()" />
+    <!-- PAGE 2: PERSON SEARCH -->
+    <div id="pg-person" class="page">
+      <div class="top-row">
+        <div style="font-size:1.05rem;font-weight:700">👤 Person Search</div>
+        <button class="strict-badge" id="personStrictBadge" onclick="togglePersonStrict()">
+          <span class="dot"></span> Strict Mode
+        </button>
+      </div>
+      <div class="card">
+        <div class="card-title">ข้อมูลบุคคล</div>
+        <div class="person-fields">
+          <div class="field-group"><label>ชื่อ</label><input type="text" id="pFirst" oninput="renderPlatforms()" placeholder="ชื่อจริง"></div>
+          <div class="field-group"><label>นามสกุล</label><input type="text" id="pLast" oninput="renderPlatforms()" placeholder="นามสกุล"></div>
+          <div class="field-group"><label>ชื่อเล่น / Username</label><input type="text" id="pNick" oninput="renderPlatforms()" placeholder="nickname / username"></div>
+          <div class="field-group"><label>บริษัท / องค์กร</label><input type="text" id="pOrg" oninput="renderPlatforms()" placeholder="บริษัท / โรงเรียน"></div>
+          <div class="field-group"><label>เมือง / จังหวัด</label><input type="text" id="pLoc" oninput="renderPlatforms()" placeholder="กรุงเทพ, เชียงใหม่..."></div>
+          <div class="field-group"><label>อีเมล</label><input type="email" id="pEmail" oninput="renderPlatforms()" placeholder="name@email.com"></div>
+          <div class="field-group"><label>เบอร์โทร</label><input type="tel" id="pPhone" oninput="renderPlatforms()" placeholder="08x-xxx-xxxx"></div>
         </div>
-        <div class="input-group">
-          <label>นามสกุล (Last Name)</label>
-          <input id="pLastName" type="text" placeholder="เช่น ใจดี / Smith" oninput="renderPlatforms()" />
+        <div class="section-title" style="margin-top:14px">🖼️ Reverse Image Search</div>
+        <div class="reverse-img-bar">
+          <button class="btn" onclick="revImgSearch('google')">Google Images</button>
+          <button class="btn" onclick="revImgSearch('yandex')">Yandex</button>
+          <button class="btn" onclick="revImgSearch('bing')">Bing</button>
+          <button class="btn" onclick="revImgSearch('tineye')">TinEye</button>
         </div>
-        <div class="input-group">
-          <label>ชื่อเล่น / Username</label>
-          <input id="pNick" type="text" placeholder="เช่น john99" oninput="renderPlatforms()" />
-        </div>
-        <div class="input-group">
-          <label>บริษัท / องค์กร</label>
-          <input id="pOrg" type="text" placeholder="เช่น Acme Corp" oninput="renderPlatforms()" />
-        </div>
-        <div class="input-group">
-          <label>เมือง / ประเทศ</label>
-          <input id="pLocation" type="text" placeholder="เช่น Bangkok" oninput="renderPlatforms()" />
-        </div>
-        <div class="input-group">
-          <label>อีเมล (ถ้ามี)</label>
-          <input id="pEmail" type="text" placeholder="เช่น john@email.com" oninput="renderPlatforms()" />
-        </div>
-        <div class="input-group">
-          <label>เบอร์โทร (ถ้ามี)</label>
-          <input id="pPhone" type="text" placeholder="เช่น 0812345678" oninput="renderPlatforms()" />
+        <div class="section-title" style="margin-top:14px">🕰️ Wayback Machine</div>
+        <div class="wayback-row">
+          <input type="url" id="waybackUrl" placeholder="https://example.com">
+          <button class="btn" onclick="openWayback()">ดูเวอร์ชันเก่า</button>
         </div>
       </div>
-
-      <div class="pf-tabs" id="pfTabs"></div>
-      <div id="platformGrid"></div>
-
-      <div class="person-all-actions">
-        <button class="btn-orange" onclick="openAll()">&#x1F310; เปิดทุก Platform</button>
-        <button class="btn-purple" onclick="openCategory()">&#x1F4C2; เปิดเฉพาะหมวดนี้</button>
-        <button class="btn-copy"   onclick="copyAllQueries()">&#x1F4CB; Copy ทุก Query</button>
-        <button class="btn-clear"  onclick="clearPerson()">&#x2716; ล้างข้อมูล</button>
+      <div class="card">
+        <div class="pill-tabs" id="personPlatformTabs">
+          <button class="pill-tab active" onclick="setPersonTab('all',this)">ทั้งหมด</button>
+          <button class="pill-tab" onclick="setPersonTab('social',this)">💬 Social</button>
+          <button class="pill-tab" onclick="setPersonTab('th',this)">🇹🇭 เว็บไทย</button>
+          <button class="pill-tab" onclick="setPersonTab('pro',this)">💼 Professional</button>
+          <button class="pill-tab" onclick="setPersonTab('news',this)">📰 ข่าว</button>
+          <button class="pill-tab" onclick="setPersonTab('doc',this)">📄 เอกสาร</button>
+          <button class="pill-tab" onclick="setPersonTab('misc',this)">🔎 อื่นๆ</button>
+        </div>
+        <div class="person-grid" id="personPlatformGrid"></div>
       </div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn primary" onclick="openAllPlatforms()">🌐 เปิดทุก Platform</button>
+        <button class="btn" onclick="openCurrentTabPlatforms()">📂 เปิดหมวดนี้</button>
+        <button class="btn" onclick="copyAllPersonQueries()">📋 Copy ทุก Query</button>
+        <button class="btn danger" onclick="clearPersonFields()">✖ ล้างข้อมูล</button>
+      </div>
+    </div>
+
+    <!-- PAGE 3: SECURITY TOOLS -->
+    <div id="pg-security" class="page">
+      <div style="font-size:1.05rem;font-weight:700;margin-bottom:16px">🛡️ Security Tools</div>
+      <div class="sec-grid">
+        <div class="sec-card">
+          <div class="card-title">🔴 CVE Search</div>
+          <input type="text" id="cveInput" placeholder="CVE-2024-1234" oninput="renderCveLinks()">
+          <div class="sec-links" id="cveLinks"></div>
+          <div class="sec-dork-preview" id="cveDork">กรอก CVE number เพื่อสร้าง links</div>
+        </div>
+        <div class="sec-card">
+          <div class="card-title">🔵 Shodan Converter</div>
+          <input type="text" id="shodanInput" placeholder="Google dork query..." oninput="renderShodanConvert()">
+          <div class="label">Shodan Query:</div>
+          <div class="shodan-out" id="shodanOut">—</div>
+          <div class="sec-links">
+            <button class="sec-link-btn" onclick="openShodan()">🔍 เปิดใน Shodan</button>
+            <button class="sec-link-btn" onclick="copyText(document.getElementById('shodanOut').textContent)">📋 Copy</button>
+          </div>
+        </div>
+        <div class="sec-card">
+          <div class="card-title">🟢 Certificate Transparency</div>
+          <input type="text" id="ctInput" placeholder="example.com" oninput="renderCtLinks()">
+          <div class="sec-links" id="ctLinks"></div>
+        </div>
+        <div class="sec-card">
+          <div class="card-title">🟠 Breach Monitor</div>
+          <input type="text" id="breachInput" placeholder="email หรือ domain" oninput="renderBreachLinks()">
+          <div class="sec-links" id="breachLinks"></div>
+          <div class="sec-dork-preview" id="breachDork"></div>
+        </div>
+        <div class="sec-card">
+          <div class="card-title">🌐 Subdomain Enumeration</div>
+          <input type="text" id="subEnumInput" placeholder="example.com" oninput="renderSubEnumLinks()">
+          <div class="sec-links" id="subEnumLinks"></div>
+        </div>
+        <div class="sec-card full-width">
+          <div class="card-title">🔬 Technology Fingerprinting</div>
+          <div class="tech-grid" id="techGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: USERNAME HUNTER -->
+    <div id="pg-username" class="page">
+      <div style="font-size:1.05rem;font-weight:700;margin-bottom:14px">🔎 Username Hunter</div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="row">
+          <input type="text" id="unInput" oninput="renderUserCards()" placeholder="ใส่ username..." style="flex:1">
+          <button class="btn primary" onclick="openAllUserTabs()">🌐 เปิดทุก Tab</button>
+        </div>
+      </div>
+      <div class="pill-tabs" id="userPillTabs">
+        <button class="pill-tab active" onclick="setUserTab('all',this)">🌐 ทั้งหมด</button>
+        <button class="pill-tab" onclick="setUserTab('social',this)">💬 Social</button>
+        <button class="pill-tab" onclick="setUserTab('dev',this)">💻 Dev/Tech</button>
+        <button class="pill-tab" onclick="setUserTab('creative',this)">🎨 Creative</button>
+        <button class="pill-tab" onclick="setUserTab('gaming',this)">🎮 Gaming</button>
+        <button class="pill-tab" onclick="setUserTab('th',this)">🇹🇭 Thai</button>
+        <button class="pill-tab" onclick="setUserTab('misc',this)">🔎 อื่นๆ</button>
+      </div>
+      <div class="user-grid" id="userGrid"></div>
+    </div>
+
+    <!-- PAGE 5: SAVED DORKS -->
+    <div id="pg-saved" class="page">
+      <div style="font-size:1.05rem;font-weight:700;margin-bottom:14px">📚 Saved Dorks</div>
+      <div class="card">
+        <div class="row" style="flex-wrap:wrap;gap:8px">
+          <input type="text" id="savedSearch" oninput="renderSaved()" placeholder="ค้นหา..." style="flex:1;min-width:160px">
+          <button class="btn" onclick="exportSaved()">📤 Export JSON</button>
+          <button class="btn" onclick="document.getElementById('importFile').click()">📥 Import JSON</button>
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importSaved(event)">
+          <button class="btn danger" onclick="clearAllSaved()">🗑️ Clear All</button>
+        </div>
+      </div>
+      <div id="saved-list"></div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- EXPLAINER MODAL -->
+<div class="modal-overlay hidden" id="explainerModal" onclick="closeExplainerEv(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeExplainer()">✕</button>
+    <div class="modal-title" id="expTitle"></div>
+    <div class="modal-body" id="expBody"></div>
+    <div class="label">ตัวอย่าง:</div>
+    <div class="modal-example" id="expExample"></div>
+  </div>
+</div>
+
+<!-- SAVE MODAL -->
+<div class="modal-overlay hidden" id="saveModal" onclick="closeSaveModalEv(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:360px">
+    <button class="modal-close" onclick="closeSaveModal()">✕</button>
+    <div class="modal-title">💾 บันทึก Dork</div>
+    <div class="label">ชื่อ / คำอธิบาย</div>
+    <input type="text" id="saveNameInput" placeholder="เช่น: SQL dump exposure"
+      style="width:100%;margin-bottom:12px" onkeydown="if(event.key==='Enter')confirmSave()">
+    <div class="row" style="gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeSaveModal()">ยกเลิก</button>
+      <button class="btn primary" onclick="confirmSave()">บันทึก</button>
     </div>
   </div>
 </div>
 
-<div id="toast">OK</div>
+<div id="toast-wrap"></div>
 
 <script>
-// ══════════════════════════════════════════════════════════════════
-// DORK DATA
-// ══════════════════════════════════════════════════════════════════
-const categories = [
-  { id:'all',     label:'🔍 ทั้งหมด' },
-  { id:'basic',   label:'📌 พื้นฐาน' },
-  { id:'file',    label:'📄 ไฟล์' },
-  { id:'dir',     label:'📂 Directory' },
-  { id:'site',    label:'🌐 เว็บไซต์' },
-  { id:'login',   label:'🔐 Login/Admin' },
-  { id:'exposed', label:'⚠️ ข้อมูลรั่ว' },
-  { id:'cam',     label:'📷 Camera/IoT' },
-  { id:'db',      label:'🗄️ Database' },
-  { id:'social',  label:'👤 Social' },
-  { id:'news',    label:'📰 ข่าว/บทความ' },
-];
+/* ================================================================
+   UTILS
+   ================================================================ */
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function escAttr(s){return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function toast(msg,dur=2200){const w=document.getElementById('toast-wrap');const e=document.createElement('div');e.className='toast-item';e.textContent=msg;w.appendChild(e);setTimeout(()=>e.remove(),dur)}
+function copyText(t){navigator.clipboard.writeText(t).then(()=>toast('Copied!')).catch(()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a);toast('Copied!')})}
+function openUrl(u){window.open(u,'_blank')}
+function ls(k,d=null){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d}catch{return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
-const dorks = [
-  { cat:'basic', op:'site:',       label:'Operator', title:'Site Search',          syntax:'site:example.com keyword',                         desc:'ค้นหาเฉพาะภายในเว็บไซต์ที่กำหนด' },
-  { cat:'basic', op:'intitle:',    label:'Operator', title:'Title Search',          syntax:'intitle:"login page"',                             desc:'ค้นหาหน้าที่มีคำใน title' },
-  { cat:'basic', op:'allintitle:', label:'Operator', title:'All In Title',          syntax:'allintitle:admin panel',                           desc:'title ต้องมีทุกคำ' },
-  { cat:'basic', op:'inurl:',      label:'Operator', title:'URL Search',            syntax:'inurl:admin',                                      desc:'ค้นหา URL ที่มีคำนั้น' },
-  { cat:'basic', op:'allinurl:',   label:'Operator', title:'All In URL',            syntax:'allinurl:login admin',                             desc:'URL ต้องมีทุกคำ' },
-  { cat:'basic', op:'intext:',     label:'Operator', title:'In Text',               syntax:'intext:"password"',                                desc:'ค้นหาข้อความในเนื้อหาหน้า' },
-  { cat:'basic', op:'allintext:',  label:'Operator', title:'All In Text',           syntax:'allintext:username password',                      desc:'เนื้อหาต้องมีทุกคำ' },
-  { cat:'basic', op:'cache:',      label:'Operator', title:'Google Cache',          syntax:'cache:example.com',                                desc:'ดูหน้า cache ของ Google' },
-  { cat:'basic', op:'related:',    label:'Operator', title:'Related Sites',         syntax:'related:example.com',                              desc:'หาเว็บที่คล้ายกัน' },
-  { cat:'basic', op:'define:',     label:'Operator', title:'Define Word',           syntax:'define:phishing',                                  desc:'ค้นหานิยามคำ' },
-  { cat:'file',  op:'filetype:',   label:'Operator', title:'File Type',             syntax:'filetype:pdf "confidential"',                      desc:'ค้นหาไฟล์ตามนามสกุล' },
-  { cat:'file',  op:'ext:',        label:'Operator', title:'Extension',             syntax:'ext:sql site:example.com',                         desc:'ค้นหาด้วย extension ไฟล์' },
-  { cat:'file',  op:'filetype:pdf',label:'Quick',    title:'PDF Documents',         syntax:'filetype:pdf keyword',                             desc:'ค้นหาเอกสาร PDF' },
-  { cat:'file',  op:'filetype:xls',label:'Quick',    title:'Excel Files',           syntax:'filetype:xls "username" "password"',               desc:'ค้นหาไฟล์ Excel' },
-  { cat:'file',  op:'filetype:doc',label:'Quick',    title:'Word Documents',        syntax:'filetype:doc "confidential"',                      desc:'ค้นหาเอกสาร Word' },
-  { cat:'file',  op:'filetype:txt',label:'Quick',    title:'Text Files',            syntax:'filetype:txt "password"',                          desc:'ค้นหาไฟล์ข้อความ' },
-  { cat:'file',  op:'filetype:log',label:'Quick',    title:'Log Files',             syntax:'filetype:log inurl:password',                      desc:'ค้นหาไฟล์ log' },
-  { cat:'file',  op:'filetype:sql',label:'Quick',    title:'SQL Files',             syntax:'filetype:sql "insert into"',                       desc:'ค้นหาไฟล์ SQL dump' },
-  { cat:'file',  op:'filetype:env',label:'Quick',    title:'.env Files',            syntax:'filetype:env "DB_PASSWORD"',                       desc:'ค้นหาไฟล์ environment config' },
-  { cat:'file',  op:'filetype:bak',label:'Quick',    title:'Backup Files',          syntax:'filetype:bak site:example.com',                    desc:'ค้นหาไฟล์ backup' },
+/* ================================================================
+   THEME
+   ================================================================ */
+function applyTheme(t){document.body.classList.toggle('light',t==='light');document.getElementById('theme-btn').textContent=t==='light'?'🌙 Dark':'☀️ Light'}
+function toggleTheme(){const t=document.body.classList.contains('light')?'dark':'light';lsSet('dork_theme',t);applyTheme(t)}
+applyTheme(ls('dork_theme','dark'));
 
-  // DIRECTORY ACCESS / DIRECTORY LISTING
-  { cat:'dir', op:'intitle:',    label:'Classic',  title:'Open Directory (Root)',      syntax:'intitle:"index of /"',                                         desc:'ค้นหา directory listing ทั่วไปที่เปิดอยู่' },
-  { cat:'dir', op:'intitle:',    label:'Classic',  title:'Index of Parent Dir',        syntax:'intitle:"index of" "parent directory"',                        desc:'ค้นหาหน้า directory ที่มี parent directory link' },
-  { cat:'dir', op:'intitle:',    label:'Classic',  title:'Directory Listing Enabled',  syntax:'intitle:"directory listing" inurl:apache',                     desc:'ค้นหา Apache directory listing ที่เปิดอยู่' },
-  { cat:'dir', op:'intitle:',    label:'Classic',  title:'Nginx Autoindex',            syntax:'intitle:"index of" inurl:nginx',                               desc:'ค้นหา Nginx autoindex ที่เปิดอยู่' },
-  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: ไฟล์ Config',           syntax:'intitle:"index of" "config"',                                  desc:'ค้นหา directory ที่มีไฟล์ config' },
-  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: ไฟล์ Password',         syntax:'intitle:"index of" "password" OR "passwd" OR "shadow"',        desc:'ค้นหา directory ที่มีไฟล์รหัสผ่าน' },
-  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: ไฟล์ Backup',           syntax:'intitle:"index of" (".bak" OR ".backup" OR ".old")',            desc:'ค้นหา directory ที่มีไฟล์ backup' },
-  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: Database Files',        syntax:'intitle:"index of" (".sql" OR ".db" OR ".sqlite")',             desc:'ค้นหา directory ที่มีไฟล์ฐานข้อมูล' },
-  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: Log Files',             syntax:'intitle:"index of" (".log" OR "logs")',                         desc:'ค้นหา directory ที่มีไฟล์ log' },
-  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: .env / Secret',         syntax:'intitle:"index of" ".env" OR "secret" OR "credentials"',       desc:'ค้นหา directory ที่มีไฟล์ secret' },
-  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: Source Code',           syntax:'intitle:"index of" (".php" OR ".py" OR ".js" OR ".rb")',        desc:'ค้นหา directory ที่มี source code' },
-  { cat:'dir', op:'intitle:',    label:'Files',    title:'Dir: Private Keys',          syntax:'intitle:"index of" (".pem" OR ".key" OR ".pfx" OR ".cer")',     desc:'ค้นหา directory ที่มีไฟล์ private key' },
-  { cat:'dir', op:'intitle:',    label:'CMS',      title:'Dir: WordPress Uploads',     syntax:'intitle:"index of" inurl:wp-content/uploads',                  desc:'ค้นหา uploads folder ของ WordPress' },
-  { cat:'dir', op:'intitle:',    label:'CMS',      title:'Dir: WordPress Content',     syntax:'intitle:"index of" inurl:wp-content',                          desc:'ค้นหา wp-content directory' },
-  { cat:'dir', op:'intitle:',    label:'CMS',      title:'Dir: Joomla Upload',         syntax:'intitle:"index of" inurl:components/com_',                     desc:'ค้นหา Joomla component directory' },
-  { cat:'dir', op:'intitle:',    label:'CMS',      title:'Dir: Drupal Files',          syntax:'intitle:"index of" inurl:sites/default/files',                 desc:'ค้นหา Drupal files directory' },
-  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /etc/ exposed',        syntax:'intitle:"index of" inurl:/etc/',                               desc:'ค้นหา /etc/ path ที่เปิดอยู่' },
-  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /uploads/ exposed',    syntax:'intitle:"index of" inurl:/uploads/',                           desc:'ค้นหา upload directory ที่เปิดอยู่' },
-  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /backup/ exposed',     syntax:'intitle:"index of" inurl:/backup/',                            desc:'ค้นหา backup directory ที่เปิดอยู่' },
-  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /admin/ exposed',      syntax:'intitle:"index of" inurl:/admin/',                             desc:'ค้นหา admin directory ที่เปิดอยู่' },
-  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /private/ exposed',    syntax:'intitle:"index of" inurl:/private/',                           desc:'ค้นหา private directory ที่เปิดอยู่' },
-  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /secret/ exposed',     syntax:'intitle:"index of" inurl:/secret/',                            desc:'ค้นหา secret directory ที่เปิดอยู่' },
-  { cat:'dir', op:'inurl:',      label:'Path',     title:'Path: /temp/ exposed',       syntax:'intitle:"index of" inurl:/temp/ OR inurl:/tmp/',               desc:'ค้นหา temp directory ที่เปิดอยู่' },
-  { cat:'dir', op:'intitle:',    label:'Server',   title:'Server: Apache Status',      syntax:'intitle:"Apache Status" inurl:server-status',                  desc:'ค้นหาหน้า Apache server-status' },
-  { cat:'dir', op:'intitle:',    label:'Server',   title:'Server: Nginx Status',       syntax:'intitle:"Statistics" inurl:nginx_status',                      desc:'ค้นหาหน้า Nginx status' },
-  { cat:'dir', op:'intitle:',    label:'Server',   title:'Server: PHP Info',           syntax:'intitle:"phpinfo()" inurl:phpinfo.php',                        desc:'ค้นหาหน้า phpinfo ที่เปิดสาธารณะ' },
-  { cat:'dir', op:'intitle:',    label:'Server',   title:'Server: IIS Directory',      syntax:'intitle:"IIS Windows Server" intitle:"index"',                 desc:'ค้นหา IIS default directory listing' },
-  { cat:'dir', op:'intitle:',    label:'Site',     title:'Site-specific Dir Listing',  syntax:'intitle:"index of" site:example.com',                          desc:'ค้นหา directory listing เฉพาะเว็บที่กำหนด' },
+/* ================================================================
+   NAVIGATION
+   ================================================================ */
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg-'+id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  // sync mob-tab active state
+  document.querySelectorAll('.mob-tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.page===id);
+  });
+  if(id==='saved')renderSaved();
+}
 
-  { cat:'site',  op:'site:',       label:'Operator', title:'Domain Search',         syntax:'site:example.com',                                 desc:'ค้นหาทุกหน้าในโดเมน' },
-  { cat:'site',  op:'site:.gov',   label:'Quick',    title:'Government Sites',      syntax:'site:.gov keyword',                                desc:'ค้นหาในเว็บภาครัฐ' },
-  { cat:'site',  op:'site:.edu',   label:'Quick',    title:'Education Sites',       syntax:'site:.edu keyword',                                desc:'ค้นหาในเว็บมหาวิทยาลัย' },
-  { cat:'site',  op:'site:.mil',   label:'Quick',    title:'Military Sites',        syntax:'site:.mil keyword',                                desc:'ค้นหาในเว็บทหาร' },
-  { cat:'site',  op:'site:.th',    label:'Quick',    title:'Thai Sites',            syntax:'site:.th keyword',                                 desc:'ค้นหาในเว็บไทย' },
-  { cat:'site',  op:'-site:',      label:'Operator', title:'Exclude Site',          syntax:'keyword -site:example.com',                        desc:'ยกเว้นเว็บไซต์นั้น' },
-  { cat:'login', op:'intitle:',    label:'Quick',    title:'Admin Login Page',      syntax:'intitle:"admin login" site:example.com',            desc:'ค้นหาหน้า admin login' },
-  { cat:'login', op:'inurl:',      label:'Quick',    title:'Admin Panel',           syntax:'inurl:/admin site:example.com',                    desc:'ค้นหา admin panel' },
-  { cat:'login', op:'inurl:',      label:'Quick',    title:'phpMyAdmin',            syntax:'inurl:phpmyadmin site:example.com',                 desc:'ค้นหา phpMyAdmin' },
-  { cat:'login', op:'inurl:',      label:'Quick',    title:'WordPress Login',       syntax:'inurl:wp-login.php',                               desc:'ค้นหาหน้า login WordPress' },
-  { cat:'login', op:'intitle:',    label:'Quick',    title:'Control Panel',         syntax:'intitle:"control panel" inurl:cpanel',              desc:'ค้นหา Control Panel' },
-  { cat:'login', op:'inurl:',      label:'Quick',    title:'Login Page',            syntax:'inurl:login.php site:example.com',                  desc:'ค้นหา login.php' },
-  { cat:'exposed',op:'intext:',    label:'Quick',    title:'Username & Password',   syntax:'intext:"username" intext:"password" filetype:txt',  desc:'หาไฟล์ที่มี username/password' },
-  { cat:'exposed',op:'intext:',    label:'Quick',    title:'API Key',               syntax:'intext:"api_key" OR intext:"api-key" filetype:txt', desc:'ค้นหา API Key ที่หลุด' },
-  { cat:'exposed',op:'intext:',    label:'Quick',    title:'AWS Access Key',        syntax:'intext:"AKIA" filetype:txt site:pastebin.com',      desc:'ค้นหา AWS Access Key' },
-  { cat:'exposed',op:'filetype:env',label:'Quick',   title:'Env Config',            syntax:'filetype:env "SECRET_KEY"',                         desc:'ค้นหาไฟล์ .env ที่หลุด' },
-  { cat:'exposed',op:'intitle:',   label:'Quick',    title:'Index of Passwords',    syntax:'intitle:"index of" "password"',                     desc:'ค้นหา directory listing' },
-  { cat:'exposed',op:'intitle:',   label:'Quick',    title:'Index of /etc',         syntax:'intitle:"index of" "/etc"',                         desc:'ค้นหา directory /etc' },
-  { cat:'exposed',op:'inurl:',     label:'Quick',    title:'Git Config',            syntax:'inurl:".git/config" site:example.com',              desc:'ค้นหา .git config ที่เปิด' },
-  { cat:'cam',   op:'inurl:',      label:'Quick',    title:'IP Camera',             syntax:'inurl:view/view.shtml',                             desc:'ค้นหากล้อง IP ที่เปิด' },
-  { cat:'cam',   op:'intitle:',    label:'Quick',    title:'CCTV Live',             syntax:'intitle:"Live View / - AXIS"',                      desc:'ค้นหากล้อง Axis' },
-  { cat:'cam',   op:'inurl:',      label:'Quick',    title:'Webcam',                syntax:'inurl:/webcam.html',                                desc:'ค้นหา Webcam สาธารณะ' },
-  { cat:'cam',   op:'intitle:',    label:'Quick',    title:'Network Camera',        syntax:'intitle:"network camera" inurl:main.cgi',           desc:'ค้นหา Network Camera' },
-  { cat:'cam',   op:'inurl:',      label:'Quick',    title:'DVR/NVR Panel',         syntax:'inurl:8080/DVRClient',                              desc:'ค้นหาหน้า DVR/NVR' },
-  { cat:'cam',   op:'intitle:',    label:'Quick',    title:'Hikvision',             syntax:'intitle:"Hikvision" inurl:/doc/page/login.asp',     desc:'ค้นหากล้อง Hikvision' },
-  { cat:'db',    op:'inurl:',      label:'Quick',    title:'phpMyAdmin Open',       syntax:'inurl:phpmyadmin intitle:phpMyAdmin',               desc:'ค้นหา phpMyAdmin ที่เปิดสาธารณะ' },
-  { cat:'db',    op:'intitle:',    label:'Quick',    title:'MongoDB Admin',         syntax:'intitle:"MongoDB Statistics" inurl:28017',          desc:'ค้นหา MongoDB ที่เปิด' },
-  { cat:'db',    op:'intitle:',    label:'Quick',    title:'Elasticsearch',         syntax:'intitle:"Kibana" inurl:5601',                       desc:'ค้นหา Kibana/Elasticsearch' },
-  { cat:'db',    op:'filetype:sql',label:'Quick',    title:'SQL Dump',              syntax:'filetype:sql "CREATE TABLE"',                       desc:'ค้นหา SQL dump ที่หลุด' },
-  { cat:'db',    op:'inurl:',      label:'Quick',    title:'Redis Monitor',         syntax:'inurl::6379 intitle:"Redis"',                       desc:'ค้นหา Redis ที่เปิด' },
-  { cat:'db',    op:'intext:',     label:'Quick',    title:'Connection String',     syntax:'intext:"Server=.*;Database=.*;User Id=.*;"',        desc:'ค้นหา DB connection string' },
-  { cat:'social',op:'site:',       label:'Quick',    title:'LinkedIn Profile',      syntax:'site:linkedin.com/in/ "keyword"',                   desc:'ค้นหาโปรไฟล์ LinkedIn' },
-  { cat:'social',op:'site:',       label:'Quick',    title:'Twitter/X',             syntax:'site:x.com "keyword"',                             desc:'ค้นหาโพสต์ใน X/Twitter' },
-  { cat:'social',op:'site:',       label:'Quick',    title:'Facebook',              syntax:'site:facebook.com "keyword"',                      desc:'ค้นหาใน Facebook' },
-  { cat:'social',op:'site:',       label:'Quick',    title:'GitHub Code',           syntax:'site:github.com "password" "api_key"',              desc:'ค้นหา sensitive data ใน GitHub' },
-  { cat:'social',op:'site:',       label:'Quick',    title:'Pastebin',              syntax:'site:pastebin.com "keyword"',                       desc:'ค้นหาใน Pastebin' },
-  { cat:'news',  op:'intitle:',    label:'Quick',    title:'ข่าวล่าสุด',            syntax:'intitle:"keyword" site:thairath.co.th OR site:matichon.co.th', desc:'ค้นหาข่าวจากสื่อไทย' },
-  { cat:'news',  op:'after:',      label:'Operator', title:'After Date',            syntax:'keyword after:2024-01-01',                          desc:'ค้นหาเนื้อหาหลังวันที่กำหนด' },
-  { cat:'news',  op:'before:',     label:'Operator', title:'Before Date',           syntax:'keyword before:2024-12-31',                         desc:'ค้นหาเนื้อหาก่อนวันที่กำหนด' },
-];
+function showPageMobile(id,btn){
+  showPage(id, document.querySelector(`.nav-tab[data-page="${id}"]`));
+  closeMobileMenu();
+}
 
-const operators = [
-  { value:'',           label:'— ไม่ใช้ operator —' },
-  { value:'site:',      label:'site: — เจาะเว็บไซต์' },
-  { value:'intitle:',   label:'intitle: — ค้นหาใน title' },
-  { value:'allintitle:',label:'allintitle: — title มีทุกคำ' },
-  { value:'inurl:',     label:'inurl: — ค้นหาใน URL' },
-  { value:'allinurl:',  label:'allinurl: — URL มีทุกคำ' },
-  { value:'intext:',    label:'intext: — ค้นหาในเนื้อหา' },
-  { value:'allintext:', label:'allintext: — เนื้อหามีทุกคำ' },
-  { value:'filetype:',  label:'filetype: — ประเภทไฟล์' },
-  { value:'ext:',       label:'ext: — extension ไฟล์' },
-  { value:'cache:',     label:'cache: — Google Cache' },
-  { value:'related:',   label:'related: — เว็บที่คล้าย' },
-  { value:'define:',    label:'define: — นิยามคำ' },
-  { value:'after:',     label:'after: — หลังวันที่' },
-  { value:'before:',    label:'before: — ก่อนวันที่' },
-  { value:'-site:',     label:'-site: — ยกเว้นเว็บ' },
-  { value:'OR',         label:'OR — หรือ' },
-  { value:'AND',        label:'AND — และ' },
-  { value:'-',          label:'- — ยกเว้นคำ' },
-  { value:'"',          label:'"" — วลีแน่นอน' },
-];
+function toggleMobileMenu(){
+  const hb  = document.getElementById('hamburger');
+  const mm  = document.getElementById('mobile-menu');
+  const open = mm.classList.toggle('open');
+  hb.classList.toggle('open', open);
+}
 
-const opSuggestions = {
-  'filetype:':  ['pdf','xls','xlsx','doc','docx','txt','log','sql','env','bak','conf','cfg','json','xml','csv'],
-  'ext:':       ['pdf','xls','doc','txt','log','sql','env','bak','php','asp','js'],
-  'site:':      ['.gov.th','.go.th','.ac.th','.co.th','.th','github.com','pastebin.com','linkedin.com'],
-  'inurl:':     ['admin','login','phpMyAdmin','wp-login','config','backup','dashboard','api','token'],
-  'intitle:':   ['"login"','"admin"','"index of"','"dashboard"','"control panel"','"configuration"'],
-  'intext:':    ['"password"','"username"','"api_key"','"secret"','"token"','"access_key"'],
-  'after:':     ['2024-01-01','2025-01-01','2023-01-01'],
-  'before:':    ['2025-12-31','2024-12-31','2026-12-31'],
+function closeMobileMenu(){
+  document.getElementById('hamburger').classList.remove('open');
+  document.getElementById('mobile-menu').classList.remove('open');
+}
+
+// close mobile menu on outside click
+document.addEventListener('click', e=>{
+  const hb = document.getElementById('hamburger');
+  const mm = document.getElementById('mobile-menu');
+  if(mm.classList.contains('open') && !hb.contains(e.target) && !mm.contains(e.target)){
+    closeMobileMenu();
+  }
+});
+
+/* ================================================================
+   KEYBOARD SHORTCUTS
+   ================================================================ */
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();doSearch()}
+  if(e.ctrlKey&&e.key==='k'){e.preventDefault();const ki=document.getElementById('kwInput');if(ki)ki.focus()}
+  if(e.ctrlKey&&e.key==='s'){e.preventDefault();showSaveDialog()}
+  if(e.key==='Escape'){const ki=document.getElementById('kwInput');if(ki&&document.activeElement===ki)ki.value=''}
+});
+
+/* ================================================================
+   OP EXPLANATIONS
+   ================================================================ */
+const opExplains={
+  'site:':{title:'site:',body:'จำกัดผลลัพธ์เฉพาะโดเมนหรือ subdomain ที่ระบุ',example:'site:example.com filetype:pdf'},
+  'intitle:':{title:'intitle:',body:'ค้นหาหน้าเว็บที่มีคำอยู่ใน title ของหน้า',example:'intitle:"admin login"'},
+  'allintitle:':{title:'allintitle:',body:'ค้นหาหน้าเว็บที่มีทุกคำอยู่ใน title',example:'allintitle:admin login panel'},
+  'inurl:':{title:'inurl:',body:'ค้นหาหน้าเว็บที่ URL มีคำที่กำหนด',example:'inurl:wp-login.php'},
+  'allinurl:':{title:'allinurl:',body:'ค้นหาหน้าเว็บที่ URL มีทุกคำที่กำหนด',example:'allinurl:admin login'},
+  'intext:':{title:'intext:',body:'ค้นหาหน้าเว็บที่ body มีคำที่กำหนด',example:'intext:"Powered by WordPress"'},
+  'allintext:':{title:'allintext:',body:'ค้นหาหน้าเว็บที่ body มีทุกคำที่กำหนด',example:'allintext:username password'},
+  'filetype:':{title:'filetype:',body:'จำกัดผลลัพธ์เฉพาะชนิดไฟล์ เช่น pdf, xls, sql',example:'filetype:pdf site:gov.th'},
+  'ext:':{title:'ext:',body:'เหมือน filetype: ใช้จำกัดนามสกุลไฟล์',example:'ext:sql "password"'},
+  'cache:':{title:'cache:',body:'แสดง cached version ของหน้าเว็บที่ Google บันทึกไว้',example:'cache:example.com'},
+  'related:':{title:'related:',body:'ค้นหาเว็บไซต์ที่ Google คิดว่าเกี่ยวข้อง',example:'related:wikipedia.org'},
+  'define:':{title:'define:',body:'แสดงคำจำกัดความ',example:'define:SQL injection'},
+  'after:':{title:'after:',body:'กรองผลลัพธ์หลังวันที่ที่ระบุ (YYYY-MM-DD)',example:'after:2024-01-01 site:thairath.co.th'},
+  'before:':{title:'before:',body:'กรองผลลัพธ์ก่อนวันที่ที่ระบุ (YYYY-MM-DD)',example:'before:2024-12-31 CVE-2024'},
+  '-site:':{title:'-site: (exclude)',body:'ยกเว้นผลลัพธ์จากโดเมนที่ระบุ',example:'hacking -site:wikipedia.org'},
+  'OR':{title:'OR',body:'ค้นหาผลลัพธ์ที่มีคำใดคำหนึ่ง (boolean OR)',example:'filetype:doc OR filetype:docx'},
+  'AND':{title:'AND',body:'ค้นหาผลลัพธ์ที่มีทั้งสองคำ',example:'admin AND password'},
+  '-':{title:'- (exclude word)',body:'ยกเว้นคำที่ตามมา',example:'login -admin -wordpress'},
+  '"':{title:'" " (exact phrase)',body:'ค้นหาวลีที่ตรงเป๊ะ',example:'"index of /" "parent directory"'}
 };
 
-// ══════════════════════════════════════════════════════════════════
-// PLATFORM DATA — each entry has:
-//   query(p)       — normal query
-//   strictQuery(p) — strict (more precise) query
-// ══════════════════════════════════════════════════════════════════
-const platformCats = [
-  { id:'all',    label:'🌐 ทั้งหมด' },
-  { id:'social', label:'💬 Social' },
-  { id:'thai',   label:'🇹🇭 เว็บไทย' },
-  { id:'pro',    label:'💼 Professional' },
-  { id:'news',   label:'📰 ข่าว' },
-  { id:'doc',    label:'📄 เอกสาร' },
-  { id:'misc',   label:'🔎 อื่นๆ' },
+/* ================================================================
+   DORK DATA
+   ================================================================ */
+const dorkCategories=[
+  {id:'all',label:'all'},{id:'basic',label:'basic'},{id:'file',label:'file'},
+  {id:'dir',label:'📂 Directory'},{id:'site',label:'site'},{id:'login',label:'login'},
+  {id:'exposed',label:'exposed'},{id:'cam',label:'cam'},{id:'db',label:'db'},
+  {id:'social',label:'social'},{id:'news',label:'news'}
 ];
-
-// Helper: build context suffix for strict mode
-function ctxSuffix(p, exclude='') {
-  const parts = [];
-  if (p.org  && !exclude.includes(p.org))  parts.push(`"${p.org}"`);
-  if (p.loc  && !exclude.includes(p.loc))  parts.push(`"${p.loc}"`);
-  return parts.length ? ' ' + parts.join(' ') : '';
-}
-
-const platforms = [
-  // ── Social ──
-  {
-    cat:'social', icon:'🔵', name:'Facebook',
-    desc:'ค้นหาโปรไฟล์และโพสต์ใน Facebook',
-    query:       p => p.fullName ? `site:facebook.com "${p.fullName}"` : '',
-    strictQuery: p => p.fullName ? `site:facebook.com "${p.fullName}"${ctxSuffix(p)}` : '',
-  },
-  {
-    cat:'social', icon:'📸', name:'Instagram',
-    desc:'ค้นหาโปรไฟล์ Instagram',
-    query:       p => p.nick ? `site:instagram.com "${p.nick}"` : p.fullName ? `site:instagram.com "${p.fullName}"` : '',
-    strictQuery: p => {
-      const kw = p.nick ? `"${p.nick}"` : p.fullName ? `"${p.fullName}"` : '';
-      return kw ? `site:instagram.com ${kw}${ctxSuffix(p)}` : '';
-    },
-  },
-  {
-    cat:'social', icon:'🐦', name:'X / Twitter',
-    desc:'ค้นหาทวีตและโปรไฟล์ใน X',
-    query:       p => p.nick ? `site:x.com "${p.nick}" OR site:twitter.com "${p.nick}"` : p.fullName ? `site:x.com "${p.fullName}"` : '',
-    strictQuery: p => {
-      const kw = p.nick || p.fullName;
-      return kw ? `(site:x.com OR site:twitter.com) "${kw}"${ctxSuffix(p)}` : '';
-    },
-  },
-  {
-    cat:'social', icon:'▶️', name:'YouTube',
-    desc:'ค้นหาช่องและวิดีโอ YouTube',
-    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:youtube.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:youtube.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'social', icon:'🎵', name:'TikTok',
-    desc:'ค้นหาโปรไฟล์ TikTok',
-    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:tiktok.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:tiktok.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'social', icon:'💼', name:'LinkedIn',
-    desc:'ค้นหาโปรไฟล์มืออาชีพใน LinkedIn',
-    query:       p => {
-      if (!p.fullName) return '';
-      const parts = [`"${p.fullName}"`];
-      if (p.org) parts.push(`"${p.org}"`);
-      if (p.loc) parts.push(`"${p.loc}"`);
-      return `site:linkedin.com/in/ ${parts.join(' ')}`;
-    },
-    strictQuery: p => {
-      if (!p.fullName) return '';
-      const parts = [`"${p.fullName}"`];
-      if (p.org) parts.push(`"${p.org}"`);
-      if (p.loc) parts.push(`"${p.loc}"`);
-      if (p.email) parts.push(`"${p.email}"`);
-      return `site:linkedin.com/in/ ${parts.join(' ')}`;
-    },
-  },
-  {
-    cat:'social', icon:'📌', name:'Pinterest',
-    desc:'ค้นหาโปรไฟล์ Pinterest',
-    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:pinterest.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:pinterest.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'social', icon:'🎮', name:'Reddit',
-    desc:'ค้นหาผู้ใช้และโพสต์ใน Reddit',
-    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:reddit.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:reddit.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-
-  // ── เว็บไทย ──
-  {
-    cat:'thai', icon:'🌸', name:'Pantip',
-    desc:'ค้นหากระทู้และผู้ใช้ใน Pantip',
-    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:pantip.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `site:pantip.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'thai', icon:'🗞️', name:'Sanook',
-    desc:'ค้นหาข่าวและบุคคลใน Sanook',
-    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:sanook.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:sanook.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'thai', icon:'🏠', name:'Kapook',
-    desc:'ค้นหาข้อมูลบุคคลใน Kapook',
-    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:kapook.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:kapook.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'thai', icon:'🗣️', name:'Thairath',
-    desc:'ค้นหาข่าวบุคคลใน Thairath',
-    query:       p => { const kw = p.fullName; return kw ? `site:thairath.co.th "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:thairath.co.th "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'thai', icon:'📰', name:'Matichon',
-    desc:'ค้นหาข่าวบุคคลใน Matichon',
-    query:       p => { const kw = p.fullName; return kw ? `site:matichon.co.th "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:matichon.co.th "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'thai', icon:'📢', name:'Posttoday',
-    desc:'ค้นหาข่าวบุคคลใน Posttoday',
-    query:       p => { const kw = p.fullName; return kw ? `site:posttoday.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:posttoday.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'thai', icon:'🔍', name:'Wongnai',
-    desc:'ค้นหาโปรไฟล์ผู้ใช้ Wongnai',
-    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:wongnai.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:wongnai.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-
-  // ── Professional ──
-  {
-    cat:'pro', icon:'🐙', name:'GitHub',
-    desc:'ค้นหาโปรไฟล์และโค้ดใน GitHub',
-    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:github.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:github.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'pro', icon:'✍️', name:'Medium',
-    desc:'ค้นหาบทความและโปรไฟล์ใน Medium',
-    query:       p => { const kw = p.nick||p.fullName; return kw ? `site:medium.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.nick||p.fullName; return kw ? `site:medium.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'pro', icon:'❓', name:'Quora',
-    desc:'ค้นหาโปรไฟล์และคำตอบใน Quora',
-    query:       p => { const kw = p.fullName; return kw ? `site:quora.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:quora.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'pro', icon:'🎓', name:'ResearchGate',
-    desc:'ค้นหานักวิจัยและงานวิจัย',
-    query:       p => { const kw = p.fullName; return kw ? `site:researchgate.net "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:researchgate.net "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'pro', icon:'📋', name:'Slideshare',
-    desc:'ค้นหาการนำเสนอใน Slideshare',
-    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:slideshare.net "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `site:slideshare.net "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-
-  // ── ข่าว ──
-  {
-    cat:'news', icon:'📡', name:'Google News (ทั่วไป)',
-    desc:'ค้นหาข่าวที่มีชื่อบุคคล',
-    query:       p => { if (!p.fullName) return ''; let q=`"${p.fullName}"`; if (p.org) q+=` "${p.org}"`; return q; },
-    strictQuery: p => {
-      if (!p.fullName) return '';
-      const parts = [`"${p.fullName}"`];
-      if (p.org) parts.push(`"${p.org}"`);
-      if (p.loc) parts.push(`"${p.loc}"`);
-      return parts.join(' AND ');
-    },
-  },
-  {
-    cat:'news', icon:'🌍', name:'BBC Thai',
-    desc:'ค้นหาข่าว BBC ภาษาไทย',
-    query:       p => { const kw = p.fullName; return kw ? `site:bbc.com/thai "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:bbc.com/thai "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'news', icon:'📺', name:'Workpoint News',
-    desc:'ค้นหาข่าว Workpoint',
-    query:       p => { const kw = p.fullName; return kw ? `site:workpointnews.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:workpointnews.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-
-  // ── เอกสาร ──
-  {
-    cat:'doc', icon:'📜', name:'Scribd',
-    desc:'ค้นหาเอกสารของบุคคลใน Scribd',
-    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:scribd.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `site:scribd.com "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'doc', icon:'📄', name:'Academia.edu',
-    desc:'ค้นหางานวิชาการของบุคคล',
-    query:       p => { const kw = p.fullName; return kw ? `site:academia.edu "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName; return kw ? `site:academia.edu "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'doc', icon:'📊', name:'Google Docs/Drive',
-    desc:'ค้นหาเอกสาร Google ที่เปิดสาธารณะ',
-    query:       p => { const kw = p.fullName||p.nick; return kw ? `site:docs.google.com "${kw}" OR site:drive.google.com "${kw}"` : ''; },
-    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `(site:docs.google.com OR site:drive.google.com) "${kw}"${ctxSuffix(p)}` : ''; },
-  },
-  {
-    cat:'doc', icon:'📑', name:'PDF ชื่อบุคคล',
-    desc:'ค้นหาไฟล์ PDF ที่มีชื่อบุคคล',
-    query:       p => { const kw = p.fullName; return kw ? `filetype:pdf "${kw}"` : ''; },
-    strictQuery: p => {
-      const kw = p.fullName;
-      if (!kw) return '';
-      const parts = [`filetype:pdf "${kw}"`];
-      if (p.org) parts.push(`"${p.org}"`);
-      return parts.join(' ');
-    },
-  },
-
-  // ── อื่นๆ ──
-  {
-    cat:'misc', icon:'📧', name:'Email Leak',
-    desc:'ค้นหาอีเมลที่หลุดใน Pastebin/web',
-    query:       p => p.email ? `"${p.email}" site:pastebin.com OR site:ghostbin.com` : p.fullName ? `"${p.fullName}" intext:"@gmail.com" OR intext:"@hotmail.com"` : '',
-    strictQuery: p => {
-      if (p.email) return `"${p.email}"${ctxSuffix(p)}`;
-      if (p.fullName) return `"${p.fullName}" (intext:"@gmail.com" OR intext:"@hotmail.com" OR intext:"@yahoo.com")`;
-      return '';
-    },
-  },
-  {
-    cat:'misc', icon:'📱', name:'Phone Search',
-    desc:'ค้นหาเบอร์โทรศัพท์ที่หลุด',
-    query:       p => p.phone ? `"${p.phone}" site:truecaller.com OR intext:"${p.phone}"` : '',
-    strictQuery: p => {
-      if (!p.phone) return '';
-      const parts = [`"${p.phone}"`];
-      if (p.fullName) parts.push(`"${p.fullName}"`);
-      return parts.join(' ');
-    },
-  },
-  {
-    cat:'misc', icon:'🖼️', name:'Google Images',
-    desc:'ค้นหารูปภาพของบุคคล',
-    query:       p => p.fullName||p.nick ? `"${p.fullName||p.nick}"` : '',
-    strictQuery: p => { const kw = p.fullName||p.nick; return kw ? `"${kw}"${ctxSuffix(p)}` : ''; },
-    searchUrl:   p => { const kw = p.fullName||p.nick; return kw ? `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(kw)}` : ''; },
-  },
-  {
-    cat:'misc', icon:'💾', name:'Pastebin',
-    desc:'ค้นหาข้อมูลที่หลุดใน Pastebin',
-    query:       p => { const kw = p.email||p.fullName; return kw ? `site:pastebin.com "${kw}"` : ''; },
-    strictQuery: p => {
-      const kw = p.email||p.fullName;
-      return kw ? `site:pastebin.com "${kw}"${ctxSuffix(p)}` : '';
-    },
-  },
-  {
-    cat:'misc', icon:'🌐', name:'ค้นหาครอบคลุม (รวม)',
-    desc:'รวมทุก field เป็น query เดียว',
-    query:       p => {
-      if (!p.fullName && !p.nick) return '';
-      const kw = p.fullName ? `"${p.fullName}"` : `"${p.nick}"`;
-      const extra = [];
-      if (p.org) extra.push(`"${p.org}"`);
-      if (p.loc) extra.push(`"${p.loc}"`);
-      return [kw,...extra].join(' ');
-    },
-    strictQuery: p => {
-      if (!p.fullName && !p.nick) return '';
-      const parts = [];
-      if (p.fullName) parts.push(`"${p.fullName}"`);
-      if (p.nick)     parts.push(`"${p.nick}"`);
-      if (p.org)      parts.push(`"${p.org}"`);
-      if (p.loc)      parts.push(`"${p.loc}"`);
-      if (p.email)    parts.push(`"${p.email}"`);
-      return parts.join(' AND ');
-    },
-  },
+const dorkData=[
+  {cat:'basic',syntax:'site:',desc:'Limit to a domain'},
+  {cat:'basic',syntax:'intitle:',desc:'Word in page title'},
+  {cat:'basic',syntax:'allintitle:',desc:'All words in title'},
+  {cat:'basic',syntax:'inurl:',desc:'Word in URL'},
+  {cat:'basic',syntax:'allinurl:',desc:'All words in URL'},
+  {cat:'basic',syntax:'intext:',desc:'Word in page body'},
+  {cat:'basic',syntax:'allintext:',desc:'All words in body'},
+  {cat:'basic',syntax:'cache:',desc:'Google cached version'},
+  {cat:'basic',syntax:'related:',desc:'Related websites'},
+  {cat:'basic',syntax:'define:',desc:'Definition of term'},
+  {cat:'file',syntax:'filetype:',desc:'Limit by file type'},
+  {cat:'file',syntax:'ext:',desc:'Limit by extension'},
+  {cat:'file',syntax:'filetype:pdf',desc:'PDF files'},
+  {cat:'file',syntax:'filetype:xls',desc:'Excel spreadsheets'},
+  {cat:'file',syntax:'filetype:doc',desc:'Word documents'},
+  {cat:'file',syntax:'filetype:txt',desc:'Text files'},
+  {cat:'file',syntax:'filetype:log',desc:'Log files'},
+  {cat:'file',syntax:'filetype:sql',desc:'SQL dump files'},
+  {cat:'file',syntax:'filetype:env',desc:'.env config files'},
+  {cat:'file',syntax:'filetype:bak',desc:'Backup files'},
+  {cat:'dir',syntax:'intitle:"index of /"',desc:'Open Directory Root'},
+  {cat:'dir',syntax:'intitle:"index of" "parent directory"',desc:'Index of Parent Dir'},
+  {cat:'dir',syntax:'intitle:"directory listing" inurl:apache',desc:'Apache listing'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:nginx',desc:'Nginx autoindex'},
+  {cat:'dir',syntax:'intitle:"index of" "config"',desc:'Dir: Config files'},
+  {cat:'dir',syntax:'intitle:"index of" "password" OR "passwd" OR "shadow"',desc:'Dir: Password files'},
+  {cat:'dir',syntax:'intitle:"index of" (".bak" OR ".backup" OR ".old")',desc:'Dir: Backup files'},
+  {cat:'dir',syntax:'intitle:"index of" (".sql" OR ".db" OR ".sqlite")',desc:'Dir: Database files'},
+  {cat:'dir',syntax:'intitle:"index of" (".log" OR "logs")',desc:'Dir: Log files'},
+  {cat:'dir',syntax:'intitle:"index of" ".env" OR "secret" OR "credentials"',desc:'Dir: Secret files'},
+  {cat:'dir',syntax:'intitle:"index of" (".pem" OR ".key" OR ".pfx" OR ".cer")',desc:'Dir: Private keys'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:wp-content/uploads',desc:'WordPress uploads'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:wp-content',desc:'WordPress content'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:sites/default/files',desc:'Drupal files'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:/etc/',desc:'/etc/ exposed'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:/uploads/',desc:'/uploads/ exposed'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:/backup/',desc:'/backup/ exposed'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:/admin/',desc:'/admin/ exposed'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:/private/',desc:'/private/ exposed'},
+  {cat:'dir',syntax:'intitle:"index of" inurl:/temp/ OR inurl:/tmp/',desc:'/temp/ exposed'},
+  {cat:'dir',syntax:'intitle:"Apache Status" inurl:server-status',desc:'Apache status'},
+  {cat:'dir',syntax:'intitle:"phpinfo()" inurl:phpinfo.php',desc:'PHP info exposed'},
+  {cat:'dir',syntax:'intitle:"index of" site:example.com',desc:'Site-specific dir listing'},
+  {cat:'site',syntax:'site:example.com',desc:'Search in specific domain'},
+  {cat:'site',syntax:'site:.gov',desc:'Government sites'},
+  {cat:'site',syntax:'site:.edu',desc:'Educational institutions'},
+  {cat:'site',syntax:'site:.mil',desc:'Military sites'},
+  {cat:'site',syntax:'site:.th',desc:'Thai domains'},
+  {cat:'site',syntax:'-site:',desc:'Exclude domain'},
+  {cat:'login',syntax:'intitle:"admin login"',desc:'Admin login pages'},
+  {cat:'login',syntax:'inurl:/admin',desc:'Admin paths'},
+  {cat:'login',syntax:'inurl:phpmyadmin',desc:'phpMyAdmin panels'},
+  {cat:'login',syntax:'inurl:wp-login.php',desc:'WordPress login'},
+  {cat:'login',syntax:'intitle:"control panel"',desc:'Control panels'},
+  {cat:'login',syntax:'inurl:login.php',desc:'PHP login pages'},
+  {cat:'exposed',syntax:'intext:"username" intext:"password" filetype:txt',desc:'Username+password txt'},
+  {cat:'exposed',syntax:'intext:"api_key" OR intext:"apikey" filetype:env',desc:'API key exposed'},
+  {cat:'exposed',syntax:'intext:"aws_access_key_id" OR intext:"aws_secret_access_key"',desc:'AWS key exposed'},
+  {cat:'exposed',syntax:'filetype:env intext:DB_PASSWORD',desc:'DB password in .env'},
+  {cat:'exposed',syntax:'intitle:"index of" "passwords"',desc:'Index of passwords'},
+  {cat:'exposed',syntax:'intitle:"index of" "/etc"',desc:'Index of /etc'},
+  {cat:'exposed',syntax:'intext:"[core]" filetype:git',desc:'Git config exposed'},
+  {cat:'cam',syntax:'intitle:"Live View / - AXIS" | inurl:view/view.shtml',desc:'AXIS CCTV cameras'},
+  {cat:'cam',syntax:'inurl:/view/index.shtml',desc:'IP Camera view.shtml'},
+  {cat:'cam',syntax:'intitle:"webcamXP 5"',desc:'WebcamXP stream'},
+  {cat:'cam',syntax:'inurl:CgiStart?page=Single',desc:'Network Camera'},
+  {cat:'cam',syntax:'intitle:"DVR_H264 | CLIENT" inurl:7001',desc:'DVR/NVR panel'},
+  {cat:'cam',syntax:'inurl:"/doc/page/login.asp"',desc:'Hikvision login'},
+  {cat:'db',syntax:'intitle:"phpMyAdmin" inurl:phpmyadmin',desc:'phpMyAdmin exposed'},
+  {cat:'db',syntax:'intitle:"MongoDB Statistics"',desc:'MongoDB stats'},
+  {cat:'db',syntax:'intitle:"Kibana" inurl:5601',desc:'Kibana dashboard'},
+  {cat:'db',syntax:'intext:"INSERT INTO" filetype:sql',desc:'SQL dump file'},
+  {cat:'db',syntax:'intitle:"Redis" inurl:6379',desc:'Redis exposed'},
+  {cat:'db',syntax:'intext:"Driver={SQL Server}" filetype:asp',desc:'Connection string'},
+  {cat:'social',syntax:'site:linkedin.com intitle:"[name]"',desc:'LinkedIn profile'},
+  {cat:'social',syntax:'site:twitter.com OR site:x.com intitle:"[name]"',desc:'X/Twitter profile'},
+  {cat:'social',syntax:'site:facebook.com intitle:"[name]"',desc:'Facebook profile'},
+  {cat:'social',syntax:'site:github.com "[name]"',desc:'GitHub search'},
+  {cat:'social',syntax:'site:pastebin.com "[email]"',desc:'Pastebin search'},
+  {cat:'news',syntax:'site:thairath.co.th "[keyword]"',desc:'ไทยรัฐ'},
+  {cat:'news',syntax:'after:2024-01-01 "[keyword]"',desc:'ข่าวหลังวันที่'},
+  {cat:'news',syntax:'before:2024-12-31 "[keyword]"',desc:'ข่าวก่อนวันที่'}
 ];
+const opSuggestions={
+  'site:':['example.com','.gov','.edu','.mil','.th','.ac.th'],
+  'intitle:':['"index of"','"admin login"','"phpMyAdmin"','"control panel"','"webcamXP"'],
+  'allintitle:':['admin login panel','index backup files'],
+  'inurl:':['admin','/wp-login.php','phpmyadmin','login.php','/.git/config'],
+  'allinurl:':['admin login dashboard'],
+  'intext:':['"Powered by WordPress"','"api_key"','"DB_PASSWORD"','"password"'],
+  'allintext:':['username password admin'],
+  'filetype:':['pdf','xls','doc','sql','env','bak','txt','log','xml','csv'],
+  'ext:':['pdf','sql','bak','env','log','cfg','conf','key'],
+  'cache:':['example.com'],
+  'related:':['wikipedia.org','github.com'],
+  'define:':['SQL injection','XSS'],
+  'after:':['2024-01-01','2023-01-01','2025-01-01'],
+  'before:':['2024-12-31','2023-12-31'],
+  '-site:':['wikipedia.org','youtube.com'],
+  'OR':['filetype:pdf OR filetype:doc'],
+  'AND':['admin AND password'],
+  '-':['spam','-advertisement'],
+  '"':['"index of /"','"password"','"username"']
+};
 
-// ══════════════════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════════════════
-let activeDorkCat = 'all';
-let activePfCat   = 'all';
-let chips         = [];
-let dorkStrict    = false;
-let personStrict  = false;
+/* ================================================================
+   PAGE 1: DORK BUILDER STATE & LOGIC
+   ================================================================ */
+let chips=[];
+let strictMode=false;
+let activeDorkCat='all';
 
-// ══════════════════════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════════════════════
-function init() {
-  renderDorkTabs(); renderDorkCards();
-  renderOpSelect(); updateSuggestions();
-  renderPfTabs();   renderPlatforms();
+function toggleStrict(){
+  strictMode=!strictMode;
+  const b=document.getElementById('strictBadge');
+  b.classList.toggle('on',strictMode);
+  renderChips();updateQueryBox();
+}
+function buildChipRaw(op,val){
+  const noWrap=['after:','before:','site:','cache:'];
+  if(strictMode&&val&&!noWrap.includes(op)&&!val.startsWith('"'))val='"'+val+'"';
+  if(!op||op==='OR'||op==='AND'||op==='-'||op==='"'){
+    if(op==='"')return'"'+val+'"';
+    if(op==='-')return'-'+val;
+    if(op==='OR')return'OR';
+    if(op==='AND')return'AND';
+    return val;
+  }
+  return op+val;
+}
+function addChip(){
+  const op=document.getElementById('opSelect').value;
+  const kw=document.getElementById('kwInput').value.trim();
+  if(!kw&&op!=='OR'&&op!=='AND'){toast('กรุณาใส่คำค้นหา');return}
+  chips.push({op,val:kw,raw:buildChipRaw(op,kw)});
+  document.getElementById('kwInput').value='';
+  renderChips();updateQueryBox();
+}
+function removeChip(i){chips.splice(i,1);renderChips();updateQueryBox()}
+function renderChips(){
+  const w=document.getElementById('chips-wrap');
+  if(!chips.length){w.innerHTML='<span style="color:var(--text3);font-size:.78rem">ยังไม่มี chip</span>';return}
+  w.innerHTML=chips.map((c,i)=>`<span class="chip${strictMode?' strict':''}">
+    ${escHtml(c.raw)}
+    <span class="chip-q" onclick="showExplainer('${escAttr(c.op||'"')}')" title="อธิบาย">❓</span>
+    <span class="chip-x" onclick="removeChip(${i})" title="ลบ">✕</span>
+  </span>`).join('');
+}
+function updateQueryBox(){
+  const q=chips.map(c=>c.raw).join(' ');
+  const b=document.getElementById('queryBox');
+  b.textContent=q||'—';
+  b.classList.toggle('strict-active',strictMode&&chips.length>0);
+}
+function getQuery(){return chips.map(c=>c.raw).join(' ')}
+function doSearch(){
+  const q=getQuery();if(!q){toast('สร้าง query ก่อนนะ');return}
+  saveToHistory(q);openUrl('https://www.google.com/search?q='+encodeURIComponent(q));
+}
+function copyQuery(){const q=getQuery();if(!q){toast('ไม่มี query');return}copyText(q)}
+function clearBuilder(){chips=[];document.getElementById('kwInput').value='';renderChips();updateQueryBox()}
+function loadQueryToBuilder(q){
+  chips=[{op:'',val:q,raw:q}];renderChips();updateQueryBox();
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{if(i===0){showPage('builder',t);t.classList.add('active')}else t.classList.remove('active')});
+  toast('โหลดแล้ว!');
+}
+function renderSuggestions(){
+  const op=document.getElementById('opSelect').value;
+  const w=document.getElementById('suggestion-wrap');
+  const s=opSuggestions[op]||[];
+  w.innerHTML=s.map(v=>`<span class="sugg-chip" onclick="document.getElementById('kwInput').value='${escAttr(v)}'">${escHtml(v)}</span>`).join('');
+}
+function initDorkCatTabs(){
+  document.getElementById('catTabs').innerHTML=dorkCategories.map(c=>
+    `<button class="cat-tab${c.id==='all'?' active':''}" onclick="setDorkCat('${c.id}',this)">${c.label}</button>`
+  ).join('');
+}
+function setDorkCat(id,btn){
+  activeDorkCat=id;
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderDorkGrid();
+}
+function renderDorkGrid(){
+  const items=activeDorkCat==='all'?dorkData:dorkData.filter(d=>d.cat===activeDorkCat);
+  document.getElementById('dorkGrid').innerHTML=items.map(d=>
+    `<div class="dork-card" onclick="loadDorkTemplate('${escAttr(d.syntax)}')">
+      <div class="dc-syntax">${escHtml(d.syntax)}</div>
+      <div class="dc-desc">${escHtml(d.desc)}</div>
+    </div>`
+  ).join('');
+}
+function loadDorkTemplate(syntax){
+  const sel=document.getElementById('opSelect');
+  for(let o of sel.options){if(o.value===syntax.trim()){sel.value=o.value;renderSuggestions();document.getElementById('kwInput').focus();toast('เลือก: '+syntax);return}}
+  chips.push({op:'',val:syntax,raw:syntax});renderChips();updateQueryBox();toast('โหลด template แล้ว');
+}
+function saveToHistory(q){
+  let h=ls('dork_history',[]);
+  h=h.filter(x=>x.q!==q);h.unshift({q,t:Date.now()});
+  if(h.length>30)h=h.slice(0,30);
+  lsSet('dork_history',h);renderHistory();
+}
+function renderHistory(){
+  const w=document.getElementById('history-chips');
+  const h=ls('dork_history',[]);
+  if(!h.length){w.innerHTML='<span style="color:var(--text3);font-size:.78rem">ยังไม่มีประวัติ</span>';return}
+  w.innerHTML=h.map(x=>`<span class="chip clickable" onclick="loadQueryToBuilder('${escAttr(x.q)}')" title="${escAttr(x.q)}">${escHtml(x.q.length>45?x.q.slice(0,45)+'…':x.q)}</span>`).join('');
+}
+function clearHistory(){lsSet('dork_history',[]);renderHistory();toast('ล้างประวัติแล้ว')}
+function genSubdomain(){
+  const d=document.getElementById('subInput').value.trim();
+  if(!d){toast('กรอก domain ก่อน');return}
+  const variants=[
+    {q:`site:*.${d} -www`,desc:'Subdomains excl. www'},
+    {q:`site:${d} -www`,desc:'Main domain excl. www'},
+    {q:`site:*.${d} filetype:pdf`,desc:'PDF on subdomains'},
+    {q:`site:*.${d} inurl:admin`,desc:'Admin paths on subdomains'},
+    {q:`site:*.${d} inurl:login`,desc:'Login pages on subdomains'}
+  ];
+  document.getElementById('subResults').innerHTML=variants.map(v=>
+    `<div class="sub-result-card">
+      <div class="sub-q">${escHtml(v.q)}</div>
+      <div class="row" style="gap:6px">
+        <button class="btn primary" style="font-size:.75rem;padding:4px 9px"
+          onclick="openUrl('https://www.google.com/search?q='+encodeURIComponent('${escAttr(v.q)}'))">🔍 Search</button>
+        <button class="btn" style="font-size:.75rem;padding:4px 9px"
+          onclick="copyText('${escAttr(v.q)}')">📋 Copy</button>
+      </div>
+    </div>`
+  ).join('');
 }
 
-// ══════════════════════════════════════════════════════════════════
-// MAIN NAV
-// ══════════════════════════════════════════════════════════════════
-function switchPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.main-nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  btn.classList.add('active');
+/* ================================================================
+   EXPLAINER MODAL
+   ================================================================ */
+function showExplainer(op){
+  const info=opExplains[op]||{title:op,body:'ไม่มีข้อมูล',example:op+'value'};
+  document.getElementById('expTitle').textContent=info.title;
+  document.getElementById('expBody').textContent=info.body;
+  document.getElementById('expExample').textContent=info.example;
+  document.getElementById('explainerModal').classList.remove('hidden');
+}
+function closeExplainer(){document.getElementById('explainerModal').classList.add('hidden')}
+function closeExplainerEv(e){if(e.target===document.getElementById('explainerModal'))closeExplainer()}
+
+/* ================================================================
+   SAVE MODAL
+   ================================================================ */
+function showSaveDialog(){
+  const q=getQuery();if(!q){toast('ไม่มี query ที่จะบันทึก');return}
+  document.getElementById('saveNameInput').value='';
+  document.getElementById('saveModal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('saveNameInput').focus(),50);
+}
+function closeSaveModal(){document.getElementById('saveModal').classList.add('hidden')}
+function closeSaveModalEv(e){if(e.target===document.getElementById('saveModal'))closeSaveModal()}
+function confirmSave(){
+  const name=document.getElementById('saveNameInput').value.trim()||'Untitled';
+  const q=getQuery();if(!q){toast('ไม่มี query');return}
+  let saved=ls('dork_saved',[]);
+  saved.push({id:Date.now(),name,query:q,date:new Date().toLocaleString('th-TH')});
+  lsSet('dork_saved',saved);closeSaveModal();toast('บันทึกแล้ว! 💾');
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{if(i===4){showPage('saved',t);t.classList.add('active')}else t.classList.remove('active')});
 }
 
-// ══════════════════════════════════════════════════════════════════
-// STRICT TOGGLES
-// ══════════════════════════════════════════════════════════════════
-function toggleDorkStrict() {
-  dorkStrict = document.getElementById('dorkStrictCheck').checked;
-  document.getElementById('dorkStrictBadge').style.display = dorkStrict ? 'inline-block' : 'none';
-  buildQuery(); // re-render query visual
-}
-
-function togglePersonStrict() {
-  personStrict = document.getElementById('personStrictCheck').checked;
-  document.getElementById('personStrictBadge').style.display = personStrict ? 'inline-block' : 'none';
+/* ================================================================
+   PAGE 2: PERSON SEARCH
+   ================================================================ */
+let personStrict=false,personTab='all';
+function togglePersonStrict(){
+  personStrict=!personStrict;
+  const b=document.getElementById('personStrictBadge');
+  b.classList.toggle('on',personStrict);
   renderPlatforms();
 }
-
-// ══════════════════════════════════════════════════════════════════
-// DORK BUILDER
-// ══════════════════════════════════════════════════════════════════
-function renderDorkTabs() {
-  document.getElementById('tabs').innerHTML = categories.map(c =>
-    `<div class="tab ${c.id===activeDorkCat?'active':''}" onclick="setDorkCat('${c.id}')">${c.label}</div>`
-  ).join('');
-}
-
-function setDorkCat(id) { activeDorkCat=id; renderDorkTabs(); renderDorkCards(); }
-
-function renderDorkCards() {
-  const list = activeDorkCat==='all' ? dorks : dorks.filter(d=>d.cat===activeDorkCat);
-  document.getElementById('dorkGrid').innerHTML = list.map(d=>`
-    <div class="dork-card" onclick="useDork('${escAttr(d.op)}','${escAttr(d.syntax)}')">
-      <div class="label">${d.label}</div>
-      <div class="title">${d.title}</div>
-      <div class="syntax">${escHtml(d.syntax)}</div>
-      <div class="desc">${d.desc}</div>
-    </div>
-  `).join('');
-}
-
-function useDork(op, syntax) {
-  const qb = document.getElementById('queryBox');
-  qb.textContent = syntax;
-  qb.classList.remove('empty');
-  const sel = document.getElementById('opSelect');
-  for (let o of sel.options) { if (o.value===op) { sel.value=op; break; } }
-  updateSuggestions();
-  toast('โหลด template แล้ว');
-}
-
-function renderOpSelect() {
-  document.getElementById('opSelect').innerHTML = operators.map(o=>
-    `<option value="${escAttr(o.value)}">${o.label}</option>`
-  ).join('');
-}
-
-function updateSuggestions() {
-  const op = document.getElementById('opSelect').value;
-  const sEl = document.getElementById('suggestions');
-  const list = opSuggestions[op]||[];
-  if (!list.length) { sEl.innerHTML=''; return; }
-  sEl.innerHTML = '<span style="font-size:.75rem;color:#666;align-self:center;">ตัวอย่าง:</span>'
-    + list.map(s=>`<div class="sug-chip" onclick="setKw('${escAttr(s)}')">${escHtml(s)}</div>`).join('');
-}
-
-function setKw(v) { document.getElementById('kwInput').value=v; }
-
-function addChip() {
-  const op = document.getElementById('opSelect').value;
-  let kw    = document.getElementById('kwInput').value.trim();
-  if (!kw) { alert('กรุณากรอก keyword'); return; }
-
-  // Strict: auto-wrap in quotes if not already quoted and no operator prefix
-  if (dorkStrict && !kw.startsWith('"') && !kw.endsWith('"')) {
-    // Don't double-quote date values (after:/before:) or URLs/domain
-    const skipQuote = ['after:','before:','site:','cache:','related:'].includes(op);
-    if (!skipQuote) kw = `"${kw}"`;
-  }
-
-  chips.push({op, kw, strict: dorkStrict});
-  document.getElementById('kwInput').value='';
-  renderChips(); buildQuery();
-}
-
-function removeChip(i) { chips.splice(i,1); renderChips(); buildQuery(); }
-
-function renderChips() {
-  const el = document.getElementById('chips');
-  if (!chips.length) { el.innerHTML=''; return; }
-  el.innerHTML = chips.map((c,i)=>{
-    const txt = c.op ? `${c.op}${c.kw}` : c.kw;
-    return `<div class="chip${c.strict?' strict':''}">${escHtml(txt)}<span class="remove" onclick="removeChip(${i})">✕</span></div>`;
-  }).join('');
-}
-
-function buildQuery() {
-  const qb = document.getElementById('queryBox');
-  if (!chips.length) {
-    qb.textContent='— ยังไม่มี query —';
-    qb.classList.add('empty'); qb.classList.remove('strict-on');
-    return;
-  }
-  qb.textContent = chips.map(c => c.op ? c.op+c.kw : c.kw).join(' ');
-  qb.classList.remove('empty');
-  qb.classList.toggle('strict-on', dorkStrict);
-}
-
-function getQuery() {
-  const txt = document.getElementById('queryBox').textContent.trim();
-  return txt==='— ยังไม่มี query —' ? '' : txt;
-}
-
-function doSearch() {
-  const q = getQuery();
-  if (!q) { alert('กรุณาสร้าง query ก่อน'); return; }
-  window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank');
-}
-
-function copyQuery() {
-  const q = getQuery();
-  if (!q) { alert('ไม่มี query'); return; }
-  navigator.clipboard.writeText(q).then(()=>toast('Copied!'));
-}
-
-function clearAll() {
-  chips=[];
-  renderChips();
-  const qb = document.getElementById('queryBox');
-  qb.textContent='— ยังไม่มี query —';
-  qb.classList.add('empty'); qb.classList.remove('strict-on');
-  document.getElementById('kwInput').value='';
-}
-
-// ══════════════════════════════════════════════════════════════════
-// PERSON SEARCH
-// ══════════════════════════════════════════════════════════════════
-function getPerson() {
-  const first = document.getElementById('pFirstName').value.trim();
-  const last  = document.getElementById('pLastName').value.trim();
-  return {
-    firstName: first, lastName: last,
-    fullName:  [first,last].filter(Boolean).join(' '),
-    nick:      document.getElementById('pNick').value.trim(),
-    org:       document.getElementById('pOrg').value.trim(),
-    loc:       document.getElementById('pLocation').value.trim(),
-    email:     document.getElementById('pEmail').value.trim(),
-    phone:     document.getElementById('pPhone').value.trim(),
+function getPersonData(){
+  return{
+    first:document.getElementById('pFirst').value.trim(),
+    last:document.getElementById('pLast').value.trim(),
+    nick:document.getElementById('pNick').value.trim(),
+    org:document.getElementById('pOrg').value.trim(),
+    loc:document.getElementById('pLoc').value.trim(),
+    email:document.getElementById('pEmail').value.trim(),
+    phone:document.getElementById('pPhone').value.trim()
   };
 }
+function fullName(p){return[p.first,p.last].filter(Boolean).join(' ')}
+function ctxSuffix(p,exclude=''){
+  const parts=[];
+  if(p.org&&exclude!=='org')parts.push(`"${p.org}"`);
+  if(p.loc&&exclude!=='loc')parts.push(`"${p.loc}"`);
+  return parts.length?' '+parts.join(' '):'';
+}
+const platformData=[
+  {cat:'social',icon:'📘',name:'Facebook',
+    normal:p=>`site:facebook.com "${fullName(p)||p.nick}"`,
+    strictQuery:p=>`site:facebook.com "${fullName(p)||p.nick}"${ctxSuffix(p)}`},
+  {cat:'social',icon:'📷',name:'Instagram',
+    normal:p=>`site:instagram.com "${p.nick||fullName(p)}"`,
+    strictQuery:p=>`site:instagram.com "${p.nick||fullName(p)}"${ctxSuffix(p)}`},
+  {cat:'social',icon:'🐦',name:'X/Twitter',
+    normal:p=>`site:x.com OR site:twitter.com "${p.nick||fullName(p)}"`,
+    strictQuery:p=>`site:x.com "${p.nick||fullName(p)}"${ctxSuffix(p)}`},
+  {cat:'social',icon:'▶️',name:'YouTube',
+    normal:p=>`site:youtube.com "${fullName(p)||p.nick}"`,
+    strictQuery:p=>`site:youtube.com "${fullName(p)||p.nick}"${ctxSuffix(p)}`},
+  {cat:'social',icon:'🎵',name:'TikTok',
+    normal:p=>`site:tiktok.com "${p.nick||fullName(p)}"`,
+    strictQuery:p=>`site:tiktok.com "${p.nick||fullName(p)}"${ctxSuffix(p)}`},
+  {cat:'social',icon:'📌',name:'Pinterest',
+    normal:p=>`site:pinterest.com "${p.nick||fullName(p)}"`,
+    strictQuery:p=>`site:pinterest.com "${p.nick||fullName(p)}"${ctxSuffix(p)}`},
+  {cat:'social',icon:'💬',name:'Reddit',
+    normal:p=>`site:reddit.com "${p.nick||fullName(p)}"`,
+    strictQuery:p=>`site:reddit.com "${p.nick||fullName(p)}"`},
+  {cat:'th',icon:'🇹🇭',name:'Pantip',
+    normal:p=>`site:pantip.com "${fullName(p)||p.nick}"`,
+    strictQuery:p=>`site:pantip.com "${fullName(p)||p.nick}"${ctxSuffix(p)}`},
+  {cat:'th',icon:'🔶',name:'Sanook',
+    normal:p=>`site:sanook.com "${fullName(p)}"`,
+    strictQuery:p=>`site:sanook.com "${fullName(p)}"`},
+  {cat:'th',icon:'🍊',name:'Kapook',
+    normal:p=>`site:kapook.com "${fullName(p)}"`,
+    strictQuery:p=>`site:kapook.com "${fullName(p)}"`},
+  {cat:'th',icon:'📰',name:'Thairath',
+    normal:p=>`site:thairath.co.th "${fullName(p)}"`,
+    strictQuery:p=>`site:thairath.co.th "${fullName(p)}"`},
+  {cat:'th',icon:'📰',name:'Matichon',
+    normal:p=>`site:matichon.co.th "${fullName(p)}"`,
+    strictQuery:p=>`site:matichon.co.th "${fullName(p)}"`},
+  {cat:'th',icon:'📰',name:'Posttoday',
+    normal:p=>`site:posttoday.com "${fullName(p)}"`,
+    strictQuery:p=>`site:posttoday.com "${fullName(p)}"`},
+  {cat:'th',icon:'🍽️',name:'Wongnai',
+    normal:p=>`site:wongnai.com "${p.nick||fullName(p)}"`,
+    strictQuery:p=>`site:wongnai.com "${p.nick||fullName(p)}"`},
+  {cat:'pro',icon:'💼',name:'LinkedIn',
+    normal:p=>`site:linkedin.com "${fullName(p)}"${p.org?' "'+p.org+'"':''}`,
+    strictQuery:p=>`site:linkedin.com/in "${fullName(p)}"${ctxSuffix(p)}`},
+  {cat:'pro',icon:'🐙',name:'GitHub',
+    normal:p=>`site:github.com "${p.nick||fullName(p)}"`,
+    strictQuery:p=>`site:github.com "${p.nick||fullName(p)}"${ctxSuffix(p,'loc')}`},
+  {cat:'pro',icon:'✍️',name:'Medium',
+    normal:p=>`site:medium.com "${p.nick||fullName(p)}"`,
+    strictQuery:p=>`site:medium.com "${p.nick||fullName(p)}"`},
+  {cat:'pro',icon:'❓',name:'Quora',
+    normal:p=>`site:quora.com "${fullName(p)}"`,
+    strictQuery:p=>`site:quora.com "${fullName(p)}"${ctxSuffix(p)}`},
+  {cat:'pro',icon:'📊',name:'ResearchGate',
+    normal:p=>`site:researchgate.net "${fullName(p)}"`,
+    strictQuery:p=>`site:researchgate.net "${fullName(p)}"${ctxSuffix(p,'loc')}`},
+  {cat:'pro',icon:'📑',name:'Slideshare',
+    normal:p=>`site:slideshare.net "${p.nick||fullName(p)}"`,
+    strictQuery:p=>`site:slideshare.net "${p.nick||fullName(p)}"`},
+  {cat:'news',icon:'📰',name:'Google News',
+    normal:p=>`site:news.google.com "${fullName(p)}"`,
+    strictQuery:p=>`site:news.google.com "${fullName(p)}"${ctxSuffix(p)}`},
+  {cat:'news',icon:'🌐',name:'BBC Thai',
+    normal:p=>`site:bbc.com/thai "${fullName(p)}"`,
+    strictQuery:p=>`site:bbc.com/thai "${fullName(p)}"`},
+  {cat:'news',icon:'📺',name:'Workpoint',
+    normal:p=>`site:workpointnews.com "${fullName(p)}"`,
+    strictQuery:p=>`site:workpointnews.com "${fullName(p)}"`},
+  {cat:'doc',icon:'📄',name:'Scribd',
+    normal:p=>`site:scribd.com "${fullName(p)}"`,
+    strictQuery:p=>`site:scribd.com "${fullName(p)}"${ctxSuffix(p,'loc')}`},
+  {cat:'doc',icon:'🎓',name:'Academia.edu',
+    normal:p=>`site:academia.edu "${fullName(p)}"`,
+    strictQuery:p=>`site:academia.edu "${fullName(p)}"${ctxSuffix(p,'loc')}`},
+  {cat:'doc',icon:'📁',name:'Google Drive',
+    normal:p=>`site:drive.google.com "${fullName(p)}"`,
+    strictQuery:p=>`site:docs.google.com OR site:drive.google.com "${fullName(p)}"`},
+  {cat:'doc',icon:'📄',name:'PDF Search',
+    normal:p=>`"${fullName(p)||p.nick}" filetype:pdf`,
+    strictQuery:p=>`"${fullName(p)}" filetype:pdf${ctxSuffix(p)}`},
+  {cat:'misc',icon:'📋',name:'Email Leak',
+    normal:p=>`"${p.email||fullName(p)}" site:pastebin.com OR site:ghostbin.co`,
+    strictQuery:p=>`"${p.email||fullName(p)}" site:pastebin.com OR site:ghostbin.co OR site:raidforums.com`},
+  {cat:'misc',icon:'📞',name:'Phone Search',
+    normal:p=>`"${p.phone||fullName(p)}"`,
+    strictQuery:p=>`"${p.phone||fullName(p)}" site:truecaller.com OR site:numberlookup.com`},
+  {cat:'misc',icon:'🖼️',name:'Google Images',
+    normal:p=>`"${fullName(p)||p.nick}"`,
+    strictQuery:p=>`"${fullName(p)||p.nick}"`},
+  {cat:'misc',icon:'📋',name:'Pastebin',
+    normal:p=>`site:pastebin.com "${fullName(p)||p.email||p.nick}"`,
+    strictQuery:p=>`site:pastebin.com "${fullName(p)||p.email||p.nick}"`},
+  {cat:'misc',icon:'🔍',name:'ค้นหาครอบคลุม',
+    normal:p=>`"${fullName(p)||p.nick}"${ctxSuffix(p)}`,
+    strictQuery:p=>`"${fullName(p)}" "${p.nick}" ${ctxSuffix(p)}`.trim()}
+];
+function getEffectiveQuery(pl,p){return personStrict?pl.strictQuery(p):pl.normal(p)}
+function setPersonTab(tab,btn){
+  personTab=tab;
+  document.querySelectorAll('#personPlatformTabs .pill-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderPlatforms();
+}
+function renderPlatforms(){
+  const p=getPersonData();
+  const filtered=personTab==='all'?platformData:platformData.filter(pl=>pl.cat===personTab);
+  document.getElementById('personPlatformGrid').innerHTML=filtered.map(pl=>{
+    const q=getEffectiveQuery(pl,p);
+    const url='https://www.google.com/search?q='+encodeURIComponent(q);
+    return`<div class="person-card">
+      <div class="pc-name">${pl.icon} ${escHtml(pl.name)}</div>
+      <div class="pc-query">${escHtml(q)}</div>
+      <div class="pc-actions">
+        <button class="btn primary" style="font-size:.72rem;padding:3px 8px"
+          onclick="openUrl('${escAttr(url)}')">🔍 ค้นหา</button>
+        <button class="btn" style="font-size:.72rem;padding:3px 8px"
+          onclick="copyText('${escAttr(q)}')">📋 Copy</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openAllPlatforms(){
+  const p=getPersonData();
+  if(!fullName(p)&&!p.nick&&!p.email){toast('กรอกข้อมูลก่อน');return}
+  platformData.forEach(pl=>openUrl('https://www.google.com/search?q='+encodeURIComponent(getEffectiveQuery(pl,p))));
+}
+function openCurrentTabPlatforms(){
+  const p=getPersonData();
+  if(!fullName(p)&&!p.nick&&!p.email){toast('กรอกข้อมูลก่อน');return}
+  (personTab==='all'?platformData:platformData.filter(pl=>pl.cat===personTab))
+    .forEach(pl=>openUrl('https://www.google.com/search?q='+encodeURIComponent(getEffectiveQuery(pl,p))));
+}
+function copyAllPersonQueries(){
+  const p=getPersonData();
+  copyText(platformData.map(pl=>pl.name+': '+getEffectiveQuery(pl,p)).join('\n'));
+}
+function clearPersonFields(){
+  ['pFirst','pLast','pNick','pOrg','pLoc','pEmail','pPhone'].forEach(id=>document.getElementById(id).value='');
+  renderPlatforms();toast('ล้างข้อมูลแล้ว');
+}
+function revImgSearch(engine){
+  const p=getPersonData();
+  const name=encodeURIComponent(fullName(p)||p.nick||'search');
+  const urls={
+    google:`https://www.google.com/search?tbm=isch&q=${name}`,
+    yandex:`https://yandex.com/images/search?text=${name}`,
+    bing:`https://www.bing.com/images/search?q=${name}`,
+    tineye:`https://tineye.com/search?q=${name}`
+  };
+  openUrl(urls[engine]);
+}
+function openWayback(){
+  const url=document.getElementById('waybackUrl').value.trim();
+  if(!url){toast('กรอก URL ก่อน');return}
+  openUrl('https://web.archive.org/web/*/'+url);
+}
 
-function renderPfTabs() {
-  document.getElementById('pfTabs').innerHTML = platformCats.map(c=>
-    `<div class="pf-tab ${c.id===activePfCat?'active':''}" onclick="setPfCat('${c.id}')">${c.label}</div>`
+/* ================================================================
+   PAGE 3: SECURITY TOOLS
+   ================================================================ */
+function renderCveLinks(){
+  const raw=document.getElementById('cveInput').value.trim().toUpperCase();
+  const linksEl=document.getElementById('cveLinks');
+  const dorkEl=document.getElementById('cveDork');
+  const m=raw.match(/CVE-\d{4}-\d+/i);
+  if(!m){linksEl.innerHTML='';dorkEl.textContent='กรอก CVE number เพื่อสร้าง links';return}
+  const cve=m[0].toUpperCase();
+  const[,year,num]=cve.split('-');
+  linksEl.innerHTML=[
+    {label:'NVD',url:`https://nvd.nist.gov/vuln/detail/${cve}`},
+    {label:'Exploit-DB',url:`https://www.exploit-db.com/search?cve=${year}-${num}`},
+    {label:'MITRE',url:`https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cve}`},
+    {label:'GitHub',url:`https://github.com/search?q=${cve}&type=repositories`},
+    {label:'Vulhub',url:`https://github.com/vulhub/vulhub/search?q=${cve}`},
+    {label:'Packet Storm',url:`https://packetstormsecurity.com/search/?q=${cve}`}
+  ].map(l=>`<button class="sec-link-btn" onclick="openUrl('${escAttr(l.url)}')">${escHtml(l.label)}</button>`).join('');
+  dorkEl.textContent=`"${cve}" (site:exploit-db.com OR site:github.com OR site:packetstormsecurity.com)`;
+}
+function convertToShodan(q){
+  if(!q)return'';
+  return q
+    .replace(/site:(\S+)/g,'hostname:"$1"')
+    .replace(/intitle:"([^"]+)"/g,'http.title:"$1"')
+    .replace(/intitle:(\S+)/g,'http.title:"$1"')
+    .replace(/inurl:(\S+)/g,'http.html:"$1"')
+    .replace(/filetype:(\S+)/g,'http.html:".$1"')
+    .replace(/ext:(\S+)/g,'http.html:".$1"')
+    .replace(/intext:"([^"]+)"/g,'http.html:"$1"')
+    .replace(/intext:(\S+)/g,'http.html:"$1"');
+}
+function renderShodanConvert(){
+  const q=document.getElementById('shodanInput').value.trim();
+  document.getElementById('shodanOut').textContent=convertToShodan(q)||'—';
+}
+function openShodan(){
+  const conv=convertToShodan(document.getElementById('shodanInput').value.trim());
+  if(!conv){toast('กรอก query ก่อน');return}
+  openUrl('https://www.shodan.io/search?query='+encodeURIComponent(conv));
+}
+function renderCtLinks(){
+  const d=document.getElementById('ctInput').value.trim();
+  const el=document.getElementById('ctLinks');
+  if(!d){el.innerHTML='';return}
+  el.innerHTML=[
+    {label:'crt.sh',url:`https://crt.sh/?q=%25.${d}`},
+    {label:'CertSpotter',url:`https://sslmate.com/certspotter/api/v1/issuances?domain=${d}&include_subdomains=true`},
+    {label:'Google Dork',url:`https://www.google.com/search?q=site%3A*.${d}+-www`},
+    {label:'Shodan',url:`https://www.shodan.io/search?query=hostname%3A.${d}`}
+  ].map(l=>`<button class="sec-link-btn" onclick="openUrl('${escAttr(l.url)}')">${escHtml(l.label)}</button>`).join('');
+}
+function renderBreachLinks(){
+  const v=document.getElementById('breachInput').value.trim();
+  const le=document.getElementById('breachLinks'),de=document.getElementById('breachDork');
+  if(!v){le.innerHTML='';de.textContent='';return}
+  le.innerHTML=[
+    {label:'HaveIBeenPwned',url:'https://haveibeenpwned.com'},
+    {label:'DeHashed',url:`https://dehashed.com/search?query=${encodeURIComponent(v)}`},
+    {label:'LeakCheck',url:'https://leakcheck.io'},
+    {label:'IntelX',url:`https://intelx.io/?s=${encodeURIComponent(v)}`}
+  ].map(l=>`<button class="sec-link-btn" onclick="openUrl('${escAttr(l.url)}')">${escHtml(l.label)}</button>`).join('');
+  de.textContent=`"${v}" site:pastebin.com OR site:ghostbin.co OR site:raidforums.com`;
+}
+function renderSubEnumLinks(){
+  const d=document.getElementById('subEnumInput').value.trim();
+  const el=document.getElementById('subEnumLinks');
+  if(!d){el.innerHTML='';return}
+  const links=[
+    {label:'Google Dork',url:`https://www.google.com/search?q=site%3A*.${d}`},
+    {label:'crt.sh',url:`https://crt.sh/?q=%25.${d}`},
+    {label:'DNSDumpster',url:'https://dnsdumpster.com'},
+    {label:'HackerTarget',url:`https://hackertarget.com/find-dns-host-records/?q=${d}`},
+    {label:'VirusTotal',url:`https://virustotal.com/gui/domain/${d}/relations`},
+    {label:'Shodan',url:`https://www.shodan.io/search?query=hostname%3A.${d}`}
+  ];
+  el.innerHTML=links.map(l=>`<button class="sec-link-btn" onclick="openUrl('${escAttr(l.url)}')">${escHtml(l.label)}</button>`).join('')+
+    `<button class="sec-link-btn" style="border-color:var(--accent);color:var(--accent)"
+      onclick="openAllSubEnum('${escAttr(d)}')">🌐 เปิดทั้งหมด</button>`;
+}
+function openAllSubEnum(d){
+  [`https://www.google.com/search?q=site%3A*.${d}`,
+   `https://crt.sh/?q=%25.${d}`,
+   `https://hackertarget.com/find-dns-host-records/?q=${d}`,
+   `https://virustotal.com/gui/domain/${d}/relations`,
+   `https://www.shodan.io/search?query=hostname%3A.${d}`
+  ].forEach(u=>openUrl(u));
+}
+const techData=[
+  {icon:'🔵',name:'WordPress',syntax:'intext:"Powered by WordPress"',desc:'WordPress CMS'},
+  {icon:'🟠',name:'Joomla',syntax:'intext:"Powered by Joomla"',desc:'Joomla CMS'},
+  {icon:'🟣',name:'Drupal',syntax:'intext:"Powered by Drupal"',desc:'Drupal CMS'},
+  {icon:'🔴',name:'Laravel',syntax:'intext:"laravel_session" inurl:login',desc:'Laravel PHP'},
+  {icon:'🟢',name:'Django',syntax:'intitle:"DisallowedHost" intext:"Django"',desc:'Django Python'},
+  {icon:'🔵',name:'Ruby on Rails',syntax:'intext:"authenticity_token" inurl:login',desc:'Rails framework'},
+  {icon:'⚪',name:'ASP.NET',syntax:'inurl:aspx intext:"__VIEWSTATE"',desc:'ASP.NET pages'},
+  {icon:'🟠',name:'Magento',syntax:'intext:"Magento" inurl:admin',desc:'Magento eCommerce'},
+  {icon:'🔵',name:'phpBB',syntax:'intitle:"phpBB" inurl:viewforum',desc:'phpBB forums'},
+  {icon:'🟡',name:'phpMyAdmin',syntax:'intitle:"phpMyAdmin" inurl:phpmyadmin',desc:'DB admin panel'},
+  {icon:'🔵',name:'React',syntax:'inurl:bundle.js intext:"react"',desc:'React SPA'},
+  {icon:'🔴',name:'Angular',syntax:'intext:"ng-version"',desc:'Angular framework'},
+  {icon:'🟢',name:'Vue.js',syntax:'intext:"__vue__"',desc:'Vue.js framework'},
+  {icon:'🟢',name:'Shopify',syntax:'intext:"cdn.shopify.com"',desc:'Shopify stores'},
+  {icon:'🟣',name:'WooCommerce',syntax:'intext:"woocommerce" inurl:shop',desc:'WooCommerce'},
+  {icon:'🔴',name:'Apache Default',syntax:'intitle:"Apache HTTP Server" intext:"It works!"',desc:'Default Apache page'},
+  {icon:'🟢',name:'Nginx Default',syntax:'intitle:"Welcome to nginx!"',desc:'Default Nginx page'},
+  {icon:'🔵',name:'IIS Default',syntax:'intitle:"IIS Windows Server"',desc:'Default IIS page'},
+  {icon:'🟡',name:'Tomcat',syntax:'intitle:"Apache Tomcat"',desc:'Tomcat server'},
+  {icon:'🔵',name:'Spring Boot',syntax:'intext:"Whitelabel Error Page"',desc:'Spring Boot error'},
+  {icon:'🔴',name:'Jenkins',syntax:'intitle:"Dashboard [Jenkins]"',desc:'Jenkins CI/CD'},
+  {icon:'🟠',name:'GitLab',syntax:'intitle:"GitLab" inurl:gitlab',desc:'Self-hosted GitLab'},
+  {icon:'🟠',name:'Grafana',syntax:'intitle:"Grafana" inurl:3000',desc:'Grafana dashboard'},
+  {icon:'🟣',name:'Kibana',syntax:'intitle:"Kibana" inurl:5601',desc:'Kibana ELK stack'}
+];
+function initTechGrid(){
+  document.getElementById('techGrid').innerHTML=techData.map(t=>
+    `<div class="tech-card" onclick="openUrl('https://www.google.com/search?q='+encodeURIComponent('${escAttr(t.syntax)}'))">
+      <div class="tc-name">${t.icon} ${escHtml(t.name)}</div>
+      <div class="tc-syntax">${escHtml(t.syntax)}</div>
+      <div class="tc-desc">${escHtml(t.desc)}</div>
+    </div>`
   ).join('');
 }
 
-function setPfCat(id) { activePfCat=id; renderPfTabs(); renderPlatforms(); }
+/* ================================================================
+   PAGE 4: USERNAME HUNTER
+   ================================================================ */
+const usernameData=[
+  {cat:'social',icon:'📘',name:'Facebook',url:u=>`https://facebook.com/${u}`},
+  {cat:'social',icon:'📷',name:'Instagram',url:u=>`https://instagram.com/${u}`},
+  {cat:'social',icon:'🐦',name:'X/Twitter',url:u=>`https://x.com/${u}`},
+  {cat:'social',icon:'▶️',name:'YouTube',url:u=>`https://youtube.com/@${u}`},
+  {cat:'social',icon:'🎵',name:'TikTok',url:u=>`https://tiktok.com/@${u}`},
+  {cat:'social',icon:'📌',name:'Pinterest',url:u=>`https://pinterest.com/${u}`},
+  {cat:'social',icon:'✈️',name:'Telegram',url:u=>`https://t.me/${u}`},
+  {cat:'social',icon:'👻',name:'Snapchat',url:u=>`https://snapchat.com/add/${u}`},
+  {cat:'social',icon:'🎮',name:'Twitch',url:u=>`https://twitch.tv/${u}`},
+  {cat:'social',icon:'🦋',name:'Bluesky',url:u=>`https://bsky.app/profile/${u}`},
+  {cat:'social',icon:'🐘',name:'Mastodon',url:u=>`https://mastodon.social/@${u}`},
+  {cat:'social',icon:'💼',name:'LinkedIn',url:u=>`https://linkedin.com/in/${u}`},
+  {cat:'social',icon:'📝',name:'Tumblr',url:u=>`https://${u}.tumblr.com`},
+  {cat:'dev',icon:'🐙',name:'GitHub',url:u=>`https://github.com/${u}`},
+  {cat:'dev',icon:'🦊',name:'GitLab',url:u=>`https://gitlab.com/${u}`},
+  {cat:'dev',icon:'🔵',name:'Bitbucket',url:u=>`https://bitbucket.org/${u}`},
+  {cat:'dev',icon:'📚',name:'Stack Overflow',url:u=>`https://stackoverflow.com/search?q=user%3A${u}`},
+  {cat:'dev',icon:'✍️',name:'Medium',url:u=>`https://medium.com/@${u}`},
+  {cat:'dev',icon:'❓',name:'Quora',url:u=>`https://quora.com/profile/${u}`},
+  {cat:'dev',icon:'🚀',name:'ProductHunt',url:u=>`https://producthunt.com/@${u}`},
+  {cat:'dev',icon:'🗞️',name:'HackerNews',url:u=>`https://news.ycombinator.com/user?id=${u}`},
+  {cat:'dev',icon:'🔑',name:'Keybase',url:u=>`https://keybase.io/${u}`},
+  {cat:'dev',icon:'🖊️',name:'CodePen',url:u=>`https://codepen.io/${u}`},
+  {cat:'dev',icon:'💻',name:'Dev.to',url:u=>`https://dev.to/${u}`},
+  {cat:'dev',icon:'🔁',name:'Replit',url:u=>`https://replit.com/@${u}`},
+  {cat:'dev',icon:'📦',name:'NPM',url:u=>`https://www.npmjs.com/~${u}`},
+  {cat:'creative',icon:'🎨',name:'DeviantArt',url:u=>`https://deviantart.com/${u}`},
+  {cat:'creative',icon:'🏀',name:'Dribbble',url:u=>`https://dribbble.com/${u}`},
+  {cat:'creative',icon:'🅱️',name:'Behance',url:u=>`https://behance.net/${u}`},
+  {cat:'creative',icon:'📷',name:'Flickr',url:u=>`https://flickr.com/people/${u}`},
+  {cat:'creative',icon:'🎵',name:'SoundCloud',url:u=>`https://soundcloud.com/${u}`},
+  {cat:'creative',icon:'🎧',name:'Spotify',url:u=>`https://open.spotify.com/user/${u}`},
+  {cat:'creative',icon:'🎸',name:'Last.fm',url:u=>`https://last.fm/user/${u}`},
+  {cat:'creative',icon:'🎬',name:'Vimeo',url:u=>`https://vimeo.com/${u}`},
+  {cat:'creative',icon:'📸',name:'VSCO',url:u=>`https://vsco.co/${u}`},
+  {cat:'creative',icon:'👤',name:'Gravatar',url:u=>`https://gravatar.com/${u}`},
+  {cat:'gaming',icon:'🎮',name:'Steam',url:u=>`https://steamcommunity.com/id/${u}`},
+  {cat:'gaming',icon:'🤖',name:'Reddit',url:u=>`https://reddit.com/user/${u}`},
+  {cat:'gaming',icon:'♟️',name:'Chess.com',url:u=>`https://chess.com/member/${u}`},
+  {cat:'gaming',icon:'♟️',name:'Lichess',url:u=>`https://lichess.org/@/${u}`},
+  {cat:'gaming',icon:'🎮',name:'Xbox',url:u=>`https://account.xbox.com/en-us/profile?gamertag=${u}`},
+  {cat:'th',icon:'🇹🇭',name:'Pantip',url:u=>`https://pantip.com/profile/${u}`},
+  {cat:'th',icon:'🍽️',name:'Wongnai',url:u=>`https://wongnai.com/u/${u}`},
+  {cat:'misc',icon:'🔗',name:'Linktree',url:u=>`https://linktr.ee/${u}`},
+  {cat:'misc',icon:'👤',name:'About.me',url:u=>`https://about.me/${u}`},
+  {cat:'misc',icon:'💰',name:'Patreon',url:u=>`https://patreon.com/${u}`},
+  {cat:'misc',icon:'📚',name:'Goodreads',url:u=>`https://www.goodreads.com/search?utf8=%E2%9C%93&query=${u}`},
+  {cat:'misc',icon:'🦜',name:'Duolingo',url:u=>`https://duolingo.com/profile/${u}`},
+  {cat:'misc',icon:'📋',name:'Pastebin',url:u=>`https://pastebin.com/u/${u}`},
+  {cat:'misc',icon:'📑',name:'Slideshare',url:u=>`https://slideshare.net/${u}`}
+];
+let userTab='all';
+function setUserTab(tab,btn){
+  userTab=tab;
+  document.querySelectorAll('#userPillTabs .pill-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderUserCards();
+}
+function renderUserCards(){
+  const un=document.getElementById('unInput').value.trim();
+  const filtered=userTab==='all'?usernameData:usernameData.filter(u=>u.cat===userTab);
+  document.getElementById('userGrid').innerHTML=filtered.map(p=>{
+    const url=un?p.url(un):'';
+    return`<div class="user-card">
+      <div class="uc-icon">${p.icon}</div>
+      <div class="uc-name">${escHtml(p.name)}</div>
+      <div class="uc-cat">${escHtml(p.cat)}</div>
+      <button class="uc-btn"${un?'':' disabled'} onclick="openUrl('${escAttr(url)}')">🔗 เปิด</button>
+    </div>`;
+  }).join('');
+}
+function openAllUserTabs(){
+  const un=document.getElementById('unInput').value.trim();
+  if(!un){toast('กรอก username ก่อน');return}
+  usernameData.forEach(p=>openUrl(p.url(un)));
+}
 
-function renderPlatforms() {
-  const p = getPerson();
-  const filtered = activePfCat==='all' ? platforms : platforms.filter(pl=>pl.cat===activePfCat);
-  const catLabels = { social:'💬 Social Media', thai:'🇹🇭 เว็บไทย', pro:'💼 Professional', news:'📰 ข่าว', doc:'📄 เอกสาร', misc:'🔎 อื่นๆ' };
-
-  let html = '';
-  if (activePfCat==='all') {
-    for (const cat of ['social','thai','pro','news','doc','misc']) {
-      const items = filtered.filter(pl=>pl.cat===cat);
-      if (!items.length) continue;
-      html += `<div class="platform-section-title">${catLabels[cat]}</div>`;
-      html += `<div class="platform-grid">${items.map(pl=>pfCard(pl,p)).join('')}</div>`;
-    }
-  } else {
-    html = `<div class="platform-grid">${filtered.map(pl=>pfCard(pl,p)).join('')}</div>`;
+/* ================================================================
+   PAGE 5: SAVED DORKS
+   ================================================================ */
+function renderSaved(){
+  const q=(document.getElementById('savedSearch')?.value||'').toLowerCase();
+  let saved=ls('dork_saved',[]);
+  if(q)saved=saved.filter(x=>x.name.toLowerCase().includes(q)||x.query.toLowerCase().includes(q));
+  const list=document.getElementById('saved-list');
+  if(!saved.length){
+    list.innerHTML='<div class="saved-empty">ยังไม่มี saved dork — บันทึกจาก Dork Builder ด้วยปุ่ม 💾 Save</div>';
+    return;
   }
-  document.getElementById('platformGrid').innerHTML = html;
-}
-
-function getEffectiveQuery(pl, p) {
-  // Use strictQuery if personStrict and the platform has it
-  if (personStrict && pl.strictQuery) return pl.strictQuery(p);
-  return pl.query(p);
-}
-
-function pfCard(pl, p) {
-  const q    = getEffectiveQuery(pl, p);
-  const noQ  = !q;
-  const hasAny = p.fullName||p.nick||p.email||p.phone;
-  const url  = pl.searchUrl ? pl.searchUrl(p) : (q ? `https://www.google.com/search?q=${encodeURIComponent(q)}` : '');
-  const qTxt = noQ ? (hasAny ? '— ข้อมูลไม่พอ —' : '— กรอกชื่อก่อน —') : q;
-  const qCls = noQ ? 'no-name' : personStrict ? 'strict-q' : '';
-  const cardCls = personStrict && !noQ ? 'strict-card' : '';
-  return `
-    <div class="platform-card ${cardCls}">
-      <div class="pf-header">
-        <div class="pf-icon">${pl.icon}</div>
-        <div>
-          <div class="pf-name">${pl.name}${personStrict&&!noQ?'<span class="strict-badge" style="font-size:.6rem;">STRICT</span>':''}</div>
-          <div class="pf-desc">${pl.desc}</div>
-        </div>
+  list.innerHTML=saved.map(x=>
+    `<div class="saved-item">
+      <div class="si-name">${escHtml(x.name)}</div>
+      <div class="si-query">${escHtml(x.query)}</div>
+      <div class="si-date">บันทึกเมื่อ: ${escHtml(x.date)}</div>
+      <div class="si-actions">
+        <button class="btn primary" style="font-size:.75rem;padding:4px 9px"
+          onclick="openUrl('https://www.google.com/search?q='+encodeURIComponent('${escAttr(x.query)}'))">🔍 ค้นหา</button>
+        <button class="btn" style="font-size:.75rem;padding:4px 9px"
+          onclick="copyText('${escAttr(x.query)}')">📋 Copy</button>
+        <button class="btn" style="font-size:.75rem;padding:4px 9px"
+          onclick="loadQueryToBuilder('${escAttr(x.query)}')">🔗 โหลดใน Builder</button>
+        <button class="btn danger" style="font-size:.75rem;padding:4px 9px"
+          onclick="deleteSaved(${x.id})">🗑️ ลบ</button>
       </div>
-      <div class="pf-query ${qCls}">${escHtml(qTxt)}</div>
-      <div class="pf-actions">
-        <button class="pf-btn pf-btn-go"   onclick="pfSearch('${escAttr(url)}')"  ${!url?'disabled style="opacity:.35;cursor:default"':''}>&#x1F50D; ค้นหา</button>
-        <button class="pf-btn pf-btn-copy" onclick="pfCopy('${escAttr(q)}')"   ${!q  ?'disabled style="opacity:.35;cursor:default"':''}>&#x1F4CB; Copy</button>
-      </div>
-    </div>
-  `;
+    </div>`
+  ).join('');
+}
+function deleteSaved(id){
+  let s=ls('dork_saved',[]);s=s.filter(x=>x.id!==id);lsSet('dork_saved',s);renderSaved();toast('ลบแล้ว');
+}
+function exportSaved(){
+  const saved=ls('dork_saved',[]);
+  const blob=new Blob([JSON.stringify(saved,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='dork_saved_'+Date.now()+'.json';a.click();toast('Export แล้ว!');
+}
+function importSaved(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!Array.isArray(data))throw new Error('invalid');
+      let saved=ls('dork_saved',[]);
+      const ids=new Set(saved.map(x=>x.id));let added=0;
+      data.forEach(x=>{if(x.id&&x.query&&!ids.has(x.id)){saved.push(x);added++}});
+      lsSet('dork_saved',saved);renderSaved();toast(`Import แล้ว ${added} รายการ`);
+    }catch{toast('ไฟล์ JSON ไม่ถูกต้อง')}
+  };
+  reader.readAsText(file);e.target.value='';
+}
+function clearAllSaved(){
+  if(!confirm('ลบ saved dorks ทั้งหมด?'))return;
+  lsSet('dork_saved',[]);renderSaved();toast('ล้างทั้งหมดแล้ว');
 }
 
-function pfSearch(url) { if (url && url!=='undefined') window.open(url,'_blank'); }
-function pfCopy(q)     { if (q) navigator.clipboard.writeText(q).then(()=>toast('Copied!')); }
-
-function openAll() {
-  const p = getPerson();
-  if (!p.fullName&&!p.nick&&!p.email&&!p.phone) { alert('กรุณากรอกชื่อหรือข้อมูลก่อน'); return; }
-  let count=0;
-  platforms.forEach(pl=>{
-    const q = getEffectiveQuery(pl,p);
-    if (!q) return;
-    const url = pl.searchUrl ? pl.searchUrl(p) : `https://www.google.com/search?q=${encodeURIComponent(q)}`;
-    if (url) { window.open(url,'_blank'); count++; }
-  });
-  toast(`เปิด ${count} แท็บ`);
-}
-
-function openCategory() {
-  const p = getPerson();
-  if (!p.fullName&&!p.nick&&!p.email&&!p.phone) { alert('กรุณากรอกชื่อหรือข้อมูลก่อน'); return; }
-  const filtered = activePfCat==='all' ? platforms : platforms.filter(pl=>pl.cat===activePfCat);
-  let count=0;
-  filtered.forEach(pl=>{
-    const q = getEffectiveQuery(pl,p);
-    if (!q) return;
-    const url = pl.searchUrl ? pl.searchUrl(p) : `https://www.google.com/search?q=${encodeURIComponent(q)}`;
-    if (url) { window.open(url,'_blank'); count++; }
-  });
-  toast(`เปิด ${count} แท็บ (หมวดนี้)`);
-}
-
-function copyAllQueries() {
-  const p = getPerson();
-  const lines = platforms
-    .map(pl=>{ const q=getEffectiveQuery(pl,p); return q?`[${pl.name}] ${q}`:null; })
-    .filter(Boolean);
-  if (!lines.length) { alert('กรอกชื่อก่อน'); return; }
-  navigator.clipboard.writeText(lines.join('\n')).then(()=>toast(`Copied ${lines.length} queries!`));
-}
-
-function clearPerson() {
-  ['pFirstName','pLastName','pNick','pOrg','pLocation','pEmail','pPhone'].forEach(id=>document.getElementById(id).value='');
+/* ================================================================
+   INIT
+   ================================================================ */
+(function init(){
+  initDorkCatTabs();
+  renderDorkGrid();
+  renderChips();
+  updateQueryBox();
+  renderSuggestions();
+  renderHistory();
   renderPlatforms();
-}
-
-// ══════════════════════════════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════════════════════════════
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2200);
-}
-
-// ══════════════════════════════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════════════════════════════
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function escAttr(s) {
-  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-}
-
-init();
+  renderUserCards();
+  initTechGrid();
+})();
 </script>
 </body>
 </html>
